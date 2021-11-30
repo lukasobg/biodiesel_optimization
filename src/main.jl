@@ -20,56 +20,56 @@ import Random
 
 include("create_instances.jl")
 include("run_models.jl")
-#include("generate_data.jl")
 
 Random.seed!(1234);
 
-# ------------------------- Deterministic example problem ---------------------------------
+# --------------------------- Simple example problem ------------------------------------
+
+#=
+println("Small problem start")
 
 # Create the data for the example problem
 ins = create_toy_instance()
 
-# Models for deterministic and robust
+# Model for deterministic 
 m = Model(Gurobi.Optimizer)
-#rm = Model(Gurobi.Optimizer)
 
-# Optimize the models with the problem data from ins
+# Optimize the model with the problem data from ins
 det_model = run_linear_model(m, ins) # Deterministic
-#rob_model = run_robust_model(rm, ins) # Robust
 
 # Print results
 #x_det = value.(det_model[:x1]);
 #obj_det = objective_value(det_model);
 #solve_time(det_model);
 
-
 # Validate results with nonlinear deterministic model
 # NOTE 2: should a new identical ins be created here?
 #ins_nlm = create_toy_instance()
 nlm = Model(Gurobi.Optimizer)
 nlm_model = run_nonlinear_model(nlm, ins)
+=#
 
 # --------------------------- Larger example problem --------------------------------------
 
-#=
+println("Large problem start")
 
 # Create the data for the larger problem
-L_ins = create_general_instance()
+det_ins, rob_ins = create_general_instance() 
 
+#=
 # Models for deterministic and robust
 L_m = Model(Gurobi.Optimizer)
 L_rm = Model(Gurobi.Optimizer)
 
 # Optimize the models with the problem data from ins
-L_det_model = run_linear_model(L_m, L_ins) # Deterministic
-L_rob_model = run_robust_model(L_rm, L_ins) # Robust
+L_det_model = run_linear_model(L_m, det_ins) # Deterministic
+L_rob_model = run_robust_model(L_rm, det_ins, rob_ins) # Robust
 
 # Print results
-L_x_det = value.(L_det_model[:x1]);
-L_obj_det = objective_value(L_det_model);
-L_solve_time(L_det_model);
 
 # Validate results with nonlinear deterministic model
-L_nlm_model = run_nonlinear_model(L_ins)
-
+# NOTE 2: should a new identical ins be created here?
+#det_ins, rob_ins = create_general_instance() 
+L_nlm = Model(Gurobi.Optimizer)
+L_nlm_model = run_nonlinear_model(det_ins)
 =#

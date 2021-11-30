@@ -216,69 +216,73 @@ end
 #
 # The data used in the variables, constraints and objective
 # come from the problem instance parameter ins
-function run_robust_model(RobModel, ins)
+function run_robust_model(rm, det_ins, rob_ins)
 
     println()
     println(" - run_robust_model() called")
     println()
 
-    # ------------------ Get problem data from ins -------------------
-    #=
-    b1 = ins.b1; b = 1:b1
-    s1 = ins.s1; s = 1:s1 
+    # ------------------ Get problem data from det_ins -------------------
+    b1 = det_ins.b1; b = 1:b1
+    s1 = det_ins.s1; s = 1:s1 
 
-    a_b = ins.a_b 
-    D_tot = ins.D_tot
+    a_b = det_ins.a_b 
+    D_tot = det_ins.D_tot
 
-    PC_s = ins.PC_s
-    B_sb = ins.B_sb
-    D_s = ins.D_s
+    rho_min = det_ins.rho_min
+    rho_max = det_ins.rho_max
 
+    α = det_ins.α
+
+    # ------------------ Get problem data from rob_ins -------------------
+    B_sb = rob_ins.B_sb
+    PC_s = rob_ins.PC_s
+    D_s = rob_ins.D_s
+
+    D = rob_ins.D
+    Q = rob_ins.Q
+    θ = rob_ins.θ
+    α_val = rob_ins.α_val
+
+    set_SV = rob_ins.set_SV
+    set_SVB = rob_ins.set_SVB
+
+    #= What are these?
     C_b = ins.C_b
     T_b = ins.T_b
     P_b = ins.P_b
 
-    set_SV = ins.set_SV
-    set_SVB = ins.set_SVB
-
-    D = ins.D
-    Q = ins.Q
-    θ = ins.θ
-    α_val = ins.α_val
-
     H = ins.H
-
-    Beta_b?
-    noPFAD?
     =#
 
     # -------------------- Set the problem variables -------------------
-    # Variables from deterministic for comparison
-    #@variable(m, 0<= x[s,b]); #amount of biomass b from supplier s, tons 
-    #@variable(m, y[b] >= 0); #Amount of biomass b pre-treated for blending
-    #@variable(m, v[b] >= 0); #Property value of pooled biomass b
-    #@variable(m, rho_min <= rho <= rho_max); #Property value of blended biomass
-    #@variable(m, q >= 0); #Amount of bio-diesel before hydro pre-treatment
-    #@variable(m, z >= 0); #Amount of final bio-diesel
-
-
+    #=
     @variable(RobModel, x[s] >= 0); #amount of biomass b from supplier s
     @variable(RobModel, w >= 0);
     @variable(RobModel, 0.78 <= rho <= 0.94);
     @variable(RobModel, y[b] >= 0);
     @variable(RobModel, z >= 0) ;
+    =#
 
-    @variable(RobModel, λ[j in s, i in set_SV] >= 0);
-    @variable(RobModel, μ[j in s, i in set_SV] >= 0);
-    @variable(RobModel, η >= 0);
-    @variable(RobModel, slack >= 0);
+    # Variables from deterministic
+    @variable(rm, 0<= x[s,b]); #amount of biomass b from supplier s, tons 
+    @variable(rm, y[b] >= 0); #Amount of biomass b pre-treated for blending
+    #@variable(rm, v[b] >= 0); #Property value of pooled biomass b
+    @variable(rm, rho_min <= rho <= rho_max); #Property value of blended biomass
+    @variable(rm, q >= 0); #Amount of bio-diesel before hydro pre-treatment
+    @variable(rm, z >= 0); #Amount of final bio-diesel
 
+    # Robust variables
+    @variable(rm, λ[j in s, i in set_SV] >= 0);
+    @variable(rm, μ[j in s, i in set_SV] >= 0);
+    @variable(rm, η >= 0);
+    @variable(rm, slack >= 0);
 
     # ------------------ Set the problem constraints --------------------
     #for swedish market uncomment the first one
-    #@constraint(RobModel, noPFAD, y[3]==0)
+    #@constraint(rm, noPFAD, y[3]==0)
 
-    #constraints from deterministic
+    #=
     @constraint(RobModel, supply_limit[i=s], x[i,j]<=PC_s[i]);
     @constraint(RobModel, pretreatment[j=b], sum(a_b[j]*x[i,j] for i=1:s1)==y[j]);
     @constraint(RobModel, mass_balance_blending, w==sum(y[i] for i=b));
@@ -286,27 +290,50 @@ function run_robust_model(RobModel, ins)
     # Fabs changed this one for less binary terms.
     @constraint(RobModel, blending, (sum(Beta_b[i]*y[i] for i=1:b1))==rho*w);
     @constraint(RobModel, hydro_conversion, rho*w==z);
+    =#
 
-    #17
-    @constraint(RobModel, [ii in set_SVB],
-        sum(a_b[ib] * Beta_b[ib] *
-        sum(sum(B_sb[s2,ib] * D[s2,iSV] * sum((λ[s1,iSV]-μ[s1,iSV]) * Q[s1,s2] for s1 in s) for s2 in s)
-        for iSV in set_SV) for ib in b)
+    # Constraints from deterministic
+    @constraint(rm, supply_limit[i=s, j=b], x_sb_min[i,j] <= x[i,j] <= x_sb_max[i,j]);  #2
+    #@constraint(rm, blending1[j=b], sum(x[i,j]*rho_sb[i] for i=1:s1)==sum(x[i,j]*v[j] for i=1:s1)) #3 
+    #@constraint(rm, blendingrho[j=b], V_b_min[j] <= v[j] <= V_b_max[j]); #4 
+    @constraint(rm, pretreatment[j=b], sum(a_b[j]*x[i,j] for i=1:s1)==y[j]); #5
+    #@constraint(rm, blending2, sum( v[j]*y[j] for j=1:b1)==rho*q) #6
+    #constraint 7 (rho_limit) done at variable rho defenition
+    @constraint(rm, beforehydro, sum(y[j] for j=1:b1)==q); #8
+    @constraint(rm, hydro_conversion, α*q==z); #9
+    @constraint(rm, demand_fullfillment, z>=D_tot);
+
+    # 41 first alpha is alpha from det model
+    # (processing yield of biomass b)
+    @constraint(rm, [ii in set_SVB],
+        α * (
+        sum(a_b[ib] *
+            sum(
+                sum(D(s2,iSV) *
+                    sum(
+                        (λ[s1,iSV]-μ[s1,iSV]) * Q[s1,s2]
+                    for s1 in s)
+                for s2 in s)
+            for iSV in set_SV)
+        for ib in b)
+        )
+
         - η*θ[ii] >= D_tot * 100 - slack
     )
 
-    #18
-    @constraint(RobModel, [j in s, i in set_SV],
+    # 42 NO UPDATE NEEDED
+    @constraint(rm, [j in s, i in set_SV],
         λ[j,i] + μ[j,i] - η * α_val[i] == 0
     )
 
-    #19
-    @constraint(RobModel, [j in s],
+    # 43 NO UPDATE NEEDED UPDATE IN SCOPE?
+    # what is x[j] here?
+    @constraint(rm, [j in s],
         sum(sum(Q[j,j1] * (λ[j1,i] - μ[j1,i]) for j1 in s) for i in set_SV) == x[j]
     )
 
     # ------------ Configure optimizer for non-linear model ---------------
-    set_optimizer_attributes(RobModel,
+    set_optimizer_attributes(rm,
         "NonConvex" => 2,
         "NumericFocus" => 3,
         "OptimalityTol" => 1e-9,
@@ -318,14 +345,20 @@ function run_robust_model(RobModel, ins)
     )
 
     # ------------------------ Set the objective --------------------------
-    @objective(RobModel, Min, sum(sum((C_b[i]+T_b[i]+D_s[j]+P_b[i])B_sb[j,i]*x[j] for i=1:b1) for j=1:s1)+H*w + 1e3*slack);
+    @objective(rm, Min, sum(
+                            sum(
+                                (C_b[i]+T_b[i]+D_s[j]+P_b[i])B_sb[j,i]*x[j] # C_b, T_b, P_b, x[j]?
+                            for i=1:b1)
+                        for j=1:s1) + 
+                        H*w + 1e3*slack # HC*q?
+              );
 
     # Optimize and return the optimized model m
     println()
     println("------------- Output from !optimize(m) call -------------")
     println()
 
-    optimize!(RobModel)
+    optimize!(rm)
 
     println()
     println("---------- End of output from !optimize(m) call ---------")
@@ -333,7 +366,7 @@ function run_robust_model(RobModel, ins)
 
     @info value.(slack) == 0.0 ? "Model is feasible." : "Model is infeasible. Demand not met: $(value.(slack))"
     x_rob = value.(x)
-    obj_rob = objective_value(RobModel)
+    obj_rob = objective_value(rm)
 
-    return RobModel
+    return rm
 end

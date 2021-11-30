@@ -9,8 +9,8 @@ mutable struct DetInstance
     a_b::Vector{Float64}
     D_tot::Int64
 
-    x_sb_min::Matrix{Int64}
-    x_sb_max::Matrix{Int64}
+    x_sb_min::Matrix{Float64} # Int64 in toy
+    x_sb_max::Matrix{Float64} # Int64 in toy
 
     V_b_min::Matrix{Float64}
     V_b_max::Matrix{Float64}
@@ -21,37 +21,31 @@ mutable struct DetInstance
     
     α::Float64
 
-    CB_b::Vector{Int64}
-    PC_b::Matrix{Int64}
-    TC_sb::Vector{Int64}
+    CB_b::Vector{Float64} # Int64 in toy
+    PC_b::Matrix{Float64} # Int64 in toy
+    TC_sb::Vector{Float64} # Int64 in toy
     HC::Int64
 end
 
 # NOT READY
-#=
 mutable struct RobInstance
-    b1::Int64
-    s1::Int64
+    B_sb::Matrix{Float64}
+    PC_s::Vector{Float64}
+    D_s::Vector{Float64}
 
-    a_b::Vector{Float64}
-    D_tot::Int64
+    D::Matrix{Float64}
+    Q::Matrix{Float64}
+    θ::Dict{Any, Any}
+    a_val::Vector{Float64}
 
-    B_sb
-    PC_s
-    D_s
-    D_tot
+    set_SV::Vector{Any}
+    set_SVB::Vector{Any}
 
+    #=
     C_b
+    T_b
     P_b
 
-    set_SV
-    set_SVB
-
-    D
-    Q
-    θ
-    a_val
-
     H
+    =#
 end
-=#

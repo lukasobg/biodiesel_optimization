@@ -1,4 +1,5 @@
 include("data_instances.jl")
+include("generate_data.jl")
 
 # Function creates a TOY problem instance with all the data. 
 # Only contains data for deterministic optimization.
@@ -63,7 +64,7 @@ function create_general_instance()
 
     # Sets
     b1=3;     #number of biomass  
-    s1=1141;  #number of suppliers 
+    s1=11;    #number of suppliers 
     k=0:9;    #decimal digits
     p=1;      #cardinal of l:1,2 or 3 
 
@@ -71,9 +72,9 @@ function create_general_instance()
     D_tot=1500;
 
     # Generate and/or update supply paramateres
-    #  - PC_s
-    #  - B_sb
-    #  - d_s
+    #  - PC_s: param of rob. model
+    #  - B_sb: param of rob. model
+    #  - D_s: param of rob. model
     #  - x_sb_min
     #  - s1
     PC_s, B_sb, D_s, x_sb_min, s1 = create_supply_and_capillarity(s1, D_tot)
@@ -87,6 +88,9 @@ function create_general_instance()
     rho_sb = create_qualities(p_high, p_low, PC_s, B_sb, a_b, s1); 
 
     # Set the remaining parameters
+
+    x_sb_min = x_sb_min.*B_sb
+    x_sb_max = PC_s.*B_sb # NOTE 2: is this correct?
 
     V_b_min=[0.6 0.6 0.6]; #Minimum property value of biomass b
     V_b_max=[0.85 0.95 0.9]; #Maximum property value of biomass b
@@ -111,8 +115,8 @@ function create_general_instance()
         a_b,
         D_tot,
 
-        x_sb_min.*B_sb, # updated in supply and cap. exp.
-        x_sb_max.*B_sb,
+        x_sb_min, # updated in supply and cap. exp.
+        x_sb_max, 
         V_b_min,
         V_b_max,
 
@@ -126,15 +130,9 @@ function create_general_instance()
         PC_b,
         TC_sb,
         HC
-
-        #= params used only in the robust model
-        PC_s,
-        B_sb,
-        D_s
-        =#
     ) 
 
-    rob_ins = create_robust_instance(b1, s1, a_b, D_tot, PC_s, B_sb, D_s)
+    rob_ins = create_robust_instance(s1, PC_s, B_sb, D_s)
 
     return det_ins, rob_ins;
 end
@@ -143,40 +141,37 @@ end
 # Function creates the robust instance.
 #
 # Used in function above.
-function create_robust_instance(b1, s1, a_b, D_tot, PC_s, B_sb, D_s)
+function create_robust_instance(s1, PC_s, B_sb, D_s)
+
+    println("calling create_robust_instance()")
 
     # Function call to generate robust data
+    println("calling create_robust_data()")
     D, Q, θ, a_val, set_SV, set_SVB = create_robust_data(s1, B_sb)
 
     # Create instance
-
     rob_ins = RobInstance(
-        b1, # gen func
-        s1, # gen func
 
-        a_b, # gen func
-        D_tot, # gen func
-
-        PC_s, # gen func
-        B_sb, # gen func
-        D_s, # gen func
-
-        C_b, # same as CB_b above? not def anywhere
-        T_b, # TC_sb or transportation cost?
-        P_b, # same as PC_b above? not def anywhere
-
-        set_SV, # func call 
-        set_SVB, # func call
+        B_sb, # param from gen func
+        PC_s, # param from gen func
+        D_s, # param from gen func
 
         D, # func call
         Q, # func call
         θ, # func call
         a_val, # func call
 
-        H, # not defined anywhere 
+        set_SV, # func call 
+        set_SVB # func call
 
-        Beta_b, # old model param, defined in BioDieselOpt.file
-        noPFAD # not defined anywhere
+        #= What are these ?
+        C_b, # same as CB_b above? not def anywhere
+        T_b, # TC_sb or transportation cost?
+        P_b, # same as PC_b above? not def anywhere
+
+        H, # not defined anywhere 
+        =#
     )
+
     return rob_ins
 end

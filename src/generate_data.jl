@@ -9,6 +9,8 @@
 # PC_s, B_sb, D_s, x_sb_min, s1
 function create_supply_and_capillarity(s1, D_tot)
 
+    println("calling create_supply_and_capillarity()")
+
     # Statistics on production capacity for sampling synthetic supply data
 
     # PFAD
@@ -280,6 +282,11 @@ end
 #  - q_s: rho_s: prop value of blend. treated biomass
 #
 function create_qualities(p_high, p_low, PC_s,B_sb,a_b,s1)
+
+    println("calling create_qualities()")
+
+    s = 1:s1
+
     interval=(p_high-p_low)/(s1-1) 
     q_s=zeros(Float64,s1) #quality dimension
 
@@ -344,7 +351,6 @@ function create_robust_data(s1, B_sb)
         end
     end
     # D is now gamma_s s x entities
-    # NOTE 1: D used later, no Uv(D)?
 
     # Q = 1/sqrt(cov(D))
     Σ = cov(D, corrected=true, dims=2);
@@ -385,8 +391,8 @@ function create_robust_data(s1, B_sb)
 
     ν = 0.05;   # regularisation parameter
 
-    SVC_Model = Model(Ipopt.Optimizer);
-    set_optimizer_attributes(SVC_Model, "mehrotra_algorithm" => "yes");
+    SVC_Model = Model(Gurobi.Optimizer);
+    #set_optimizer_attributes(SVC_Model, "mehrotra_algorithm" => "yes");
 
     # Weight variable alpha
     @variable(SVC_Model, α[i in 1:M] >= 0);
@@ -400,14 +406,19 @@ function create_robust_data(s1, B_sb)
     @constraint(SVC_Model, sum(α[i] for i in 1:M) == 1); # 38)
     @constraint(SVC_Model, [i in 1:M], α[i] * (M * ν) <= 1); # 39)
 
-    #optimize!(SVC_Model) # NOTE 4: code crashes here
-
+    println("Optimizing SVC model")
+    optimize!(SVC_Model) # NOTE 4: code crashes here
+    println("End of optimization of SVC model")
 
     # Format optimized a
     α_val = round.(value.(α), digits = 6);
     for i in 1:length(α_val)
         α_val[i] < 1e-6 ? α_val[i] = 0.0 : α_val[i]
     end
+
+    println()
+    println("First 50 values of a_val:")
+    println(α_val[1:50])
 
     # Filtering the support vectors and the boundary support vectors
     #  - SV: values at lower boundary 0, the rest 1 
@@ -434,5 +445,7 @@ function create_robust_data(s1, B_sb)
     for i1 in set_SVB # = for indexes of 1 in SVB
         θ[i1] = sum(α_val[i] * norm(Q * (D[:,i1] - D[:,i]), 1) for i in set_SV)
     end
+
+    return D, Q, θ, α_val, set_SV, set_SVB
 
 end
