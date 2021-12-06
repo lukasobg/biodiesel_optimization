@@ -1,5 +1,5 @@
-# Structure Instance contains all data of a problem
-# to be optimized
+# Structure DetInstance contains all the
+# deterministic data of a problem to be optimized
 mutable struct DetInstance 
     b1::Int64
     s1::Int64
@@ -27,25 +27,16 @@ mutable struct DetInstance
     HC::Int64
 end
 
-# NOT READY
+# Structure RobInstance contains all the
+# robust data of a problem to be optimized
 mutable struct RobInstance
     B_sb::Matrix{Float64}
-    PC_s::Vector{Float64}
-    D_s::Vector{Float64}
 
     D::Matrix{Float64}
     Q::Matrix{Float64}
     θ::Dict{Any, Any}
-    a_val::Vector{Float64}
+    α_val::Vector{Float64}
 
     set_SV::Vector{Any}
     set_SVB::Vector{Any}
-
-    #=
-    C_b
-    T_b
-    P_b
-
-    H
-    =#
 end

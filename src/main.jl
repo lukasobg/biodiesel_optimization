@@ -24,52 +24,80 @@ include("run_models.jl")
 Random.seed!(1234);
 
 # --------------------------- Simple example problem ------------------------------------
-
 #=
 println("Small problem start")
 
 # Create the data for the example problem
-ins = create_toy_instance()
+toy_ins = create_toy_instance()
 
-# Model for deterministic 
-m = Model(Gurobi.Optimizer)
+# Initialize models
+m0_det = Model(Gurobi.Optimizer) # NMDT - deterministic
+m0_nlm = Model(Gurobi.Optimizer) # nonlinear
 
-# Optimize the model with the problem data from ins
-det_model = run_linear_model(m, ins) # Deterministic
+# Create the models with the problem data from toy_ins
+m_det = create_linear_model(m0_det, toy_ins)
+m_nlm = create_nonlinear_model(m0_nlm, toy_ins)
 
-# Print results
-#x_det = value.(det_model[:x1]);
-#obj_det = objective_value(det_model);
-#solve_time(det_model);
+# Optimize the models with the problem data from toy_ins
+println("\nNMDT DETERMINISTIC (TOY) MODEL OPTIMISATION\n")
+m_det_opt = run_linear_model(m_det)
+println("\nNONLINEAR (TOY) MODEL OPTIMISATION\n")
+m_nlm_opt = run_nonlinear_model(m_nlm) 
 
-# Validate results with nonlinear deterministic model
-# NOTE 2: should a new identical ins be created here?
-#ins_nlm = create_toy_instance()
-nlm = Model(Gurobi.Optimizer)
-nlm_model = run_nonlinear_model(nlm, ins)
+# Results
+println("\nNMDT DETERMINISTIC (TOY) MODEL RESULTS\n")
+println("x_det: $(value.(m_det_opt[:x]))");
+println("obj_det: $(objective_value(m_det_opt))");
+println("solve_time: $(solve_time(m_det_opt))");
+
+println("\nNONLINEAR (TOY) MODEL RESULTS\n")
+println("x_det: $(value.(m_nlm_opt[:x]))");
+println("obj_det: $(objective_value(m_nlm_opt))");
+println("solve_time: $(solve_time(m_nlm_opt))");
 =#
-
 # --------------------------- Larger example problem --------------------------------------
 
 println("Large problem start")
 
 # Create the data for the larger problem
-det_ins, rob_ins = create_general_instance() 
+suppliers = 30 
+data_entries = 100 # for SVC model in robust data generation
+det_ins, rob_ins = create_general_instance(suppliers, data_entries)
 
-#=
-# Models for deterministic and robust
-L_m = Model(Gurobi.Optimizer)
-L_rm = Model(Gurobi.Optimizer)
+# Initialize models
+M0_det = Model(Gurobi.Optimizer) # NMDT - deterministic 
+M0_rob = Model(Gurobi.Optimizer) # NMDT - robust 
+M0_nlm = Model(Gurobi.Optimizer) # nonlinear
 
-# Optimize the models with the problem data from ins
-L_det_model = run_linear_model(L_m, det_ins) # Deterministic
-L_rob_model = run_robust_model(L_rm, det_ins, rob_ins) # Robust
+# Create the models with the problem data from det_ins and rob_ins
+M_det = create_linear_model(M0_det, det_ins)
 
-# Print results
+M_rob = create_linear_model(M0_rob, det_ins)
+M_rob = turn_model_robust(M_rob, det_ins, rob_ins)
 
-# Validate results with nonlinear deterministic model
-# NOTE 2: should a new identical ins be created here?
-#det_ins, rob_ins = create_general_instance() 
-L_nlm = Model(Gurobi.Optimizer)
-L_nlm_model = run_nonlinear_model(det_ins)
-=#
+M_nlm = create_nonlinear_model(M0_nlm, det_ins)
+
+# Optimize the models with the problem data from det_ins and rob_ins
+println("\nNMDT DETERMINISTIC MODEL OPTIMISATION\n")
+M_det_opt = run_linear_model(M_det)
+println("\nNMDT ROBUST MODEL OPTIMISATION\n")
+M_rob_opt = run_linear_model(M_rob) 
+println("\nNONLINEAR MODEL OPTIMISATION\n")
+M_nlm_opt = run_nonlinear_model(M_nlm) 
+
+# Results
+println("\nNMDT DETERMINISTIC MODEL RESULTS\n")
+println("x_det: $(value.(M_det_opt[:x]))");
+println("obj_det: $(objective_value(M_det_opt))");
+println("solve_time: $(solve_time(M_det_opt))");
+
+#println("\nNMDT ROBUST MODEL RESULTS\n")
+#println("x_det: $(value.(M_rob_opt[:x]))");
+#println("obj_det: $(objective_value(M_rob_opt))");
+#println("solve_time: $(solve_time(M_rob_opt))");
+##@info value.(M_rob_opt[:slack]) == 0.0 ? "Model is feasible." : "Model is infeasible. Demand not met: $(value.(slack))"
+
+println("\nNONLINEAR MODEL RESULTS\n")
+println("x_det: $(value.(M_nlm_opt[:x]))");
+println("obj_det: $(objective_value(M_nlm_opt))");
+println("solve_time: $(solve_time(M_nlm_opt))");

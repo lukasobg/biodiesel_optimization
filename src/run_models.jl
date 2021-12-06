@@ -1,15 +1,15 @@
-# Function optimizes the model m
+# Function creates a linear model m
 #
 # The data used in the variables, constraints and objective
 # come from the problem instance parameter ins created in
 # create_instances.jl
 #
-# Constraints #3 and #6 are replaces with NMDT
-function run_linear_model(m, ins)
+# Constraints #3 and #6 are replaced with NMDT
+#
+# Returns model m
+function create_linear_model(m, ins)
 
-    println()
-    println(" - run_linear_model() called")
-    println()
+    println("calling create_linear_model()")
     
     # ------------------ Get problem data from ins -------------------
     b1 = ins.b1; b = 1:b1 
@@ -106,6 +106,16 @@ function run_linear_model(m, ins)
     # ------------------------ Set the objective --------------------------
     @objective(m, Min, sum(sum((CB_b[j]+TC_sb[i]+PC_b[j])*x[i,j] for j=1:b1) for i=1:s1)+HC*q);
 
+    return m
+end
+
+# Function optimises the linear model m
+#
+# Returns optimsed model m
+function run_linear_model(m)
+
+    println("calling run_linear_model()")
+
     # Optimize and return the optimized model m
     println()
     println("------------- Output from !optimize(m) call -------------")
@@ -116,11 +126,11 @@ function run_linear_model(m, ins)
     println()
     println("---------- End of output from !optimize(m) call ---------")
     println()
+    
     return m
 end
 
-
-# Function optimizes nonlinear model m
+# Function creates nonlinear model m
 #
 # The data used in the variables, constraints and objective
 # come from the problem instance parameter ins
@@ -128,17 +138,17 @@ end
 # Constraints #3 and #6 are INCLUDED -> nonlinear optimisation
 #
 # Used for validation of results
-function run_nonlinear_model(m, ins)
+#
+# Returns model m
+function create_nonlinear_model(m, ins)
 
-    println()
-    println(" - run_nonlinear_model() called")
-    println()
+    println("calling create_nonlinear_model()")
     
     # ------------------ Get problem data from ins -------------------
     b1 = ins.b1; b = 1:b1 
     s1 = ins.s1; s = 1:s1
-    k = ins.k
-    #p = ins.p; l = 1:p # Only used for NMDT, not in this func
+    #k = ins.k # NMDT
+    #p = ins.p; l = 1:p # NMDT
 
     a_b = ins.a_b
     D_tot = ins.D_tot
@@ -180,6 +190,21 @@ function run_nonlinear_model(m, ins)
     @constraint(m, beforehydro, sum(y[j] for j=1:b1)==q); #8
     @constraint(m, hydro_conversion, α*q==z); #9
     @constraint(m, demand_fullfillment, z>=D_tot); #10
+     
+    # ------------------------ Set the objective --------------------------
+    @objective(m, Min, sum(sum((CB_b[j]+TC_sb[i]+PC_b[j])*x[i,j] for j=1:b1) for i=1:s1)+HC*q);
+
+    return m
+end
+
+# Function optimises the nonlinear model m
+#
+# Used for validation
+#
+# Returns optimsed model m
+function run_nonlinear_model(m) 
+
+    println("calling run_nonlinear_model()")
 
     # ------------ Configure optimizer for non-linear model ---------------
     set_optimizer_attributes(m,
@@ -192,9 +217,6 @@ function run_nonlinear_model(m, ins)
         "Presolve" => 1,
         "ScaleFlag" => 3
     )
-     
-    # ------------------------ Set the objective --------------------------
-    @objective(m, Min, sum(sum((CB_b[j]+TC_sb[i]+PC_b[j])*x[i,j] for j=1:b1) for i=1:s1)+HC*q);
 
     # Optimize and return the optimized model m
     println()
@@ -210,34 +232,49 @@ function run_nonlinear_model(m, ins)
     return m
 end
 
+# Function makes the model m robust
+# 
+# Adds robust variables and constraints
+# Updates the objective
 
-# NOT READY
-# Function optimizes robust model m
-#
 # The data used in the variables, constraints and objective
-# come from the problem instance parameter ins
-function run_robust_model(rm, det_ins, rob_ins)
+# come from the problem instance parameters det_ins and rob_ins 
+# created in create_instances.jl
+#
+# Returns robust version of model m
+function turn_model_robust(m, det_ins, rob_ins)
 
-    println()
-    println(" - run_robust_model() called")
-    println()
+    println("calling turn_model_robust()")
 
     # ------------------ Get problem data from det_ins -------------------
     b1 = det_ins.b1; b = 1:b1
-    s1 = det_ins.s1; s = 1:s1 
+    s1 = det_ins.s1; s = 1:s1
+    #k = det_ins.k # NMDT
+    #p = ins.p; l = 1:p # NMDT
 
     a_b = det_ins.a_b 
     D_tot = det_ins.D_tot
 
-    rho_min = det_ins.rho_min
-    rho_max = det_ins.rho_max
+    #x_sb_min = det_ins.x_sb_min
+    #x_sb_max = det_ins.x_sb_max
+
+    #V_b_min = det_ins.V_b_min
+    #V_b_max = det_ins.V_b_max
+
+    #rho_sb = det_ins.rho_sb
+    #rho_min = det_ins.rho_min
+    #rho_max = det_ins.rho_max
 
     α = det_ins.α
 
+    # Needed only if objective is updated
+    CB_b = det_ins.CB_b
+    TC_sb = det_ins.TC_sb
+    PC_b = det_ins.PC_b
+    HC = det_ins.HC
+
     # ------------------ Get problem data from rob_ins -------------------
     B_sb = rob_ins.B_sb
-    PC_s = rob_ins.PC_s
-    D_s = rob_ins.D_s
 
     D = rob_ins.D
     Q = rob_ins.Q
@@ -247,126 +284,60 @@ function run_robust_model(rm, det_ins, rob_ins)
     set_SV = rob_ins.set_SV
     set_SVB = rob_ins.set_SVB
 
-    #= What are these?
-    C_b = ins.C_b
-    T_b = ins.T_b
-    P_b = ins.P_b
-
-    H = ins.H
-    =#
-
-    # -------------------- Set the problem variables -------------------
-    #=
-    @variable(RobModel, x[s] >= 0); #amount of biomass b from supplier s
-    @variable(RobModel, w >= 0);
-    @variable(RobModel, 0.78 <= rho <= 0.94);
-    @variable(RobModel, y[b] >= 0);
-    @variable(RobModel, z >= 0) ;
-    =#
-
-    # Variables from deterministic
-    @variable(rm, 0<= x[s,b]); #amount of biomass b from supplier s, tons 
-    @variable(rm, y[b] >= 0); #Amount of biomass b pre-treated for blending
-    #@variable(rm, v[b] >= 0); #Property value of pooled biomass b
-    @variable(rm, rho_min <= rho <= rho_max); #Property value of blended biomass
-    @variable(rm, q >= 0); #Amount of bio-diesel before hydro pre-treatment
-    @variable(rm, z >= 0); #Amount of final bio-diesel
+    # Variables from deterministic used in constraints here
+    x = m[:x]
+    q = m[:q] # only needed if objective updated here
 
     # Robust variables
-    @variable(rm, λ[j in s, i in set_SV] >= 0);
-    @variable(rm, μ[j in s, i in set_SV] >= 0);
-    @variable(rm, η >= 0);
-    @variable(rm, slack >= 0);
+    @variable(m, λ[j in s, i in set_SV] >= 0);
+    @variable(m, μ[j in s, i in set_SV] >= 0);
+    @variable(m, η >= 0);
+    @variable(m, slack >= 0);
 
-    # ------------------ Set the problem constraints --------------------
-    #for swedish market uncomment the first one
-    #@constraint(rm, noPFAD, y[3]==0)
+    # Robust constraints
 
-    #=
-    @constraint(RobModel, supply_limit[i=s], x[i,j]<=PC_s[i]);
-    @constraint(RobModel, pretreatment[j=b], sum(a_b[j]*x[i,j] for i=1:s1)==y[j]);
-    @constraint(RobModel, mass_balance_blending, w==sum(y[i] for i=b));
-    @constraint(RobModel, demand_fullfillment, z>=D_tot);
-    # Fabs changed this one for less binary terms.
-    @constraint(RobModel, blending, (sum(Beta_b[i]*y[i] for i=1:b1))==rho*w);
-    @constraint(RobModel, hydro_conversion, rho*w==z);
-    =#
-
-    # Constraints from deterministic
-    @constraint(rm, supply_limit[i=s, j=b], x_sb_min[i,j] <= x[i,j] <= x_sb_max[i,j]);  #2
-    #@constraint(rm, blending1[j=b], sum(x[i,j]*rho_sb[i] for i=1:s1)==sum(x[i,j]*v[j] for i=1:s1)) #3 
-    #@constraint(rm, blendingrho[j=b], V_b_min[j] <= v[j] <= V_b_max[j]); #4 
-    @constraint(rm, pretreatment[j=b], sum(a_b[j]*x[i,j] for i=1:s1)==y[j]); #5
-    #@constraint(rm, blending2, sum( v[j]*y[j] for j=1:b1)==rho*q) #6
-    #constraint 7 (rho_limit) done at variable rho defenition
-    @constraint(rm, beforehydro, sum(y[j] for j=1:b1)==q); #8
-    @constraint(rm, hydro_conversion, α*q==z); #9
-    @constraint(rm, demand_fullfillment, z>=D_tot);
+    println()
+    println("Time taken in constraint 41)")
+    @time begin
 
     # 41 first alpha is alpha from det model
     # (processing yield of biomass b)
-    @constraint(rm, [ii in set_SVB],
+    @constraint(m, [ii in set_SVB],
         α * (
-        sum(a_b[ib] *
-            sum(
-                sum(D(s2,iSV) *
-                    sum(
-                        (λ[s1,iSV]-μ[s1,iSV]) * Q[s1,s2]
-                    for s1 in s)
-                for s2 in s)
-            for iSV in set_SV)
-        for ib in b)
-        )
+            sum(a_b[ib] *
+                sum(
+                    sum(D[s2,iSV] * B_sb[s2,ib] * # UNSURE: B_sb needed here or not?
+                        sum(
+                            (λ[s1,iSV]-μ[s1,iSV]) * Q[s1,s2] 
+                        for s1 in s)
+                    for s2 in s)
+                for iSV in set_SV) 
+            for ib in b)) - 
+        η*θ[ii] >= D_tot * 100 - slack # UNSURE: use slack or not
+    );
 
-        - η*θ[ii] >= D_tot * 100 - slack
-    )
+    end
+    println()
 
-    # 42 NO UPDATE NEEDED
-    @constraint(rm, [j in s, i in set_SV],
+    # 42 
+    @constraint(m, [j in s, i in set_SV],
         λ[j,i] + μ[j,i] - η * α_val[i] == 0
     )
 
-    # 43 NO UPDATE NEEDED UPDATE IN SCOPE?
-    # what is x[j] here?
-    @constraint(rm, [j in s],
-        sum(sum(Q[j,j1] * (λ[j1,i] - μ[j1,i]) for j1 in s) for i in set_SV) == x[j]
+    # 43
+    @constraint(m, [k in b, j in s],
+        sum(sum(Q[j,j1] * (λ[j1,i] - μ[j1,i]) for j1 in s) for i in set_SV) == x[j,k]
     )
 
-    # ------------ Configure optimizer for non-linear model ---------------
-    set_optimizer_attributes(rm,
-        "NonConvex" => 2,
-        "NumericFocus" => 3,
-        "OptimalityTol" => 1e-9,
-        "MIPGap" => 1e-9,
-        "FeasibilityTol" => 1e-9,
-        "IntFeasTol" => 1e-9,
-        "Presolve" => 1,
-        "ScaleFlag" => 3
-    )
+    # UNSURE: Update objective to have slack or not 
+    @objective(m, Min,
+        sum(
+             sum(
+                 (CB_b[j]+TC_sb[i]+PC_b[j])*x[i,j] 
+             for j=1:b1)
+         for i=1:s1) + 
+         HC*q + 1e3*slack
+    );
 
-    # ------------------------ Set the objective --------------------------
-    @objective(rm, Min, sum(
-                            sum(
-                                (C_b[i]+T_b[i]+D_s[j]+P_b[i])B_sb[j,i]*x[j] # C_b, T_b, P_b, x[j]?
-                            for i=1:b1)
-                        for j=1:s1) + 
-                        H*w + 1e3*slack # HC*q?
-              );
-
-    # Optimize and return the optimized model m
-    println()
-    println("------------- Output from !optimize(m) call -------------")
-    println()
-
-    optimize!(rm)
-
-    println()
-    println("---------- End of output from !optimize(m) call ---------")
-    println()
-
-    @info value.(slack) == 0.0 ? "Model is feasible." : "Model is infeasible. Demand not met: $(value.(slack))"
-    x_rob = value.(x)
-    obj_rob = objective_value(rm)
-
-    return rm
+    return m
 end

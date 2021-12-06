@@ -5,7 +5,7 @@
 #  - create_capillarity_expansion()
 # defined below
 #
-# Returns updated values after both function calls
+# Returns updated supply values after both function calls
 # PC_s, B_sb, D_s, x_sb_min, s1
 function create_supply_and_capillarity(s1, D_tot)
 
@@ -42,8 +42,9 @@ function create_supply_and_capillarity(s1, D_tot)
     PC_s, B_sb, D_s, x_sb_min = create_supply(s1, D_tot,
                                               sdPFAD, sdAF, sdUCO,
                                               avgPFAD, avgAF, avgUCO,
-                                              sdMINPFAD, avgMINPFAD, sdMINAF,
-                                              avgMINAF, sdMINWCO, avgMINWCO)
+                                              sdMINPFAD, avgMINPFAD,
+                                              sdMINAF, avgMINAF,
+                                              sdMINWCO, avgMINWCO)
 
     capillarity_factor=2; #give as input, test different levels
 
@@ -161,7 +162,6 @@ function create_supply(s, D_tot, sdPFAD, sdAF, sdUCO, avgPFAD, avgAF, avgUCO, sd
 
 
     ######################### creation of x_sb_min
-    # NOTE 1: x_sb_min vs PC_test
     for i in 1:PFAD
         min_sample=rand(Normal(avgMINPFAD, sdMINPFAD)) 
         if (min_sample<0)
@@ -190,7 +190,6 @@ function create_supply(s, D_tot, sdPFAD, sdAF, sdUCO, avgPFAD, avgAF, avgUCO, sd
     return round.(PC_test, digits=2), round.(B_sb_test, digits=2), round.(Ds_test, digits=2), round.(x_sb_min, digits=2) 
 end 
 
-# NOTE 2: what is the motivation of this function?
 # Function increases the nr of CO suppliers by 'capillarity_factor'.
 # The sum of PC, x_sb_min remain. 
 #
@@ -262,7 +261,6 @@ end
 
 
 
-# NOTE 3: Is any of this even right?
 # Function counts the property value (rho) of biomass bought from supplier s
 #  - property value: ratio describing how much biodiesel we get from initial biomass 
 #  - the property value is sampled from a norm distribution 
@@ -271,7 +269,7 @@ end
 #  - std: the preprocessing yield of biomass * prop. value of BIODIESEL
 #      - prop. value of BIODIESEL: describes the yield of blending
 #      - the values are between p_low and p_high
-#      - and assigned based on PC of supplier
+#      - and assigned based on size (PC) of supplier
 #
 # Parameters: PC_s, B_sb, s1, additionally
 #  - p_high: best property value
@@ -310,9 +308,14 @@ function create_qualities(p_high, p_low, PC_s,B_sb,a_b,s1)
     return q_s
 end
 
-# NOT READY
-# Most of robust code here
-function create_robust_data(s1, B_sb)
+# Function generates all the data for the robust data instance.
+# Takes as input
+#  - s1: number of suppliers
+#  - B_sb: binary matrix mapping suppliers to biomasses
+#  - data_entries: number of entries to use in SVC model
+#
+# Returns the robust data
+function create_robust_data(s1, B_sb, data_entries)
 
     s = 1:s1
 
@@ -320,10 +323,10 @@ function create_robust_data(s1, B_sb)
 
     #gamma_s: uncertainty factor for each supplier [0,1]
     #gamma matrix Sx100 historical data for all suppliers
-    ent = 500;
+    ent = data_entries;
     D = zeros(Float64, length(s), ent); #saving gamma data here
 
-    # Sample 500 gammas for all suppliers
+    # Sample ent nr of gammas for all suppliers
     # Distr. varies on type of biomass (based on historical data)
     for i in s
         # UCO 
@@ -352,11 +355,35 @@ function create_robust_data(s1, B_sb)
     end
     # D is now gamma_s s x entities
 
-    # Q = 1/sqrt(cov(D))
     Σ = cov(D, corrected=true, dims=2);
     Q = round.(Σ^(-0.5), digits = 6);
 
-    # NOTE 2: auxialiary problem?
+    println("Type of Q before: $(typeof(Q)))")
+
+    println()
+    println("Diagonal elems of Σ[1:10] before")
+    Σ_diag = Σ[diagind(Σ)]
+    for elem in Σ_diag[1:10] 
+        println(elem)
+    end
+
+    # Q matrix sometimes gets complex numbers
+    # Make small modifications to the diagonal of Σ
+    # to avoid this
+    while typeof(Q) != Matrix{Float64}
+        Σ[diagind(Σ)] .+= 1e-5
+        Q = round.(Σ^(-0.5), digits = 6);
+    end
+
+    println()
+    println("Type of Q after: $(typeof(Q)))")
+
+    println("Diagonal elems of Σ[1:10] after")
+    Σ_diag = Σ[diagind(Σ)]
+    for elem in Σ_diag[1:10] 
+        println(elem)
+    end
+
     # Step 2: form the Kernel matrix
 
     # Min and max gamma for each supplier
@@ -406,9 +433,9 @@ function create_robust_data(s1, B_sb)
     @constraint(SVC_Model, sum(α[i] for i in 1:M) == 1); # 38)
     @constraint(SVC_Model, [i in 1:M], α[i] * (M * ν) <= 1); # 39)
 
-    println("Optimizing SVC model")
-    optimize!(SVC_Model) # NOTE 4: code crashes here
-    println("End of optimization of SVC model")
+    println(" ----- SVC model ----- ")
+    optimize!(SVC_Model)
+    println(" ----- End of of SVC model ----- ")
 
     # Format optimized a
     α_val = round.(value.(α), digits = 6);
@@ -417,8 +444,10 @@ function create_robust_data(s1, B_sb)
     end
 
     println()
-    println("First 50 values of a_val:")
-    println(α_val[1:50])
+    println("Values of a_val[1:10]:")
+    for elem in α_val[1:10]
+        println(elem)
+    end
 
     # Filtering the support vectors and the boundary support vectors
     #  - SV: values at lower boundary 0, the rest 1 

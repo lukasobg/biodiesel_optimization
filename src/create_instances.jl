@@ -28,7 +28,7 @@ function create_toy_instance()
         [0.6 0.6 0.6],    # V_b_min
         [0.85 0.95 0.9],  # V_b_max
     
-        # NOTE 1: rho_sb min 0.6 > 0.58,0.55 ? 
+        # NOTE 1: rho_min 0.6 > 0.58,0.55 ? 
         # rho_sb The property value of biomass bought from supplier s
         [0.8 ;0.9; 0.78;0.64;0.68;0.85;0.7;0.58;0.7;0.65;0.55;0.6],  # rho_sb
         0.6,  # rho_min: Minimum property value of BIO-DIESEL
@@ -43,30 +43,24 @@ function create_toy_instance()
         [100;90;80;50;100;120;100;120;120;100;80;50],  # TC_sb
         100  # HC: hydrotreatment cost 
     
-        #= params used only in the robust model
-        PC_s,
-        B_sb,
-        D_s
-        =#
     )
     return ins
 
 end
 
-# NOT READY
 # Function creates a GENERAL problem instance with all the data.
 # Contains data for deterministic and robust optimization.
 # 
 # Data returned as struct 
 # - det_ins which is used in deterministic optimization
-# - det_ins which is used in robust optimization
-function create_general_instance()
+# - rob_ins which is used in robust optimization
+function create_general_instance(suppliers, data_entries)
 
     # Sets
-    b1=3;     #number of biomass  
-    s1=11;    #number of suppliers 
-    k=0:9;    #decimal digits
-    p=1;      #cardinal of l:1,2 or 3 
+    b1=3;         #number of biomass  
+    s1=suppliers; #number of suppliers, set in main.jl
+    k=0:9;        #decimal digits
+    p=1;          #cardinal of l:1,2 or 3 
 
     a_b=[0.94; 0.95 ; 0.98]; #used in overleaf 
     D_tot=1500;
@@ -116,7 +110,7 @@ function create_general_instance()
         D_tot,
 
         x_sb_min, # updated in supply and cap. exp.
-        x_sb_max, 
+        x_sb_max, # updated in supply and cap. exp.
         V_b_min,
         V_b_max,
 
@@ -128,49 +122,40 @@ function create_general_instance()
 
         CB_b,
         PC_b,
-        TC_sb,
+        TC_sb, # updated in supply and cap. exp.
         HC
     ) 
 
-    rob_ins = create_robust_instance(s1, PC_s, B_sb, D_s)
+    # Function call to create the robust instance
+    rob_ins = create_robust_instance(s1, B_sb, data_entries)
 
     return det_ins, rob_ins;
 end
 
-# NOT READY
 # Function creates the robust instance.
 #
 # Used in function above.
-function create_robust_instance(s1, PC_s, B_sb, D_s)
+function create_robust_instance(s1, B_sb, data_entries)
 
     println("calling create_robust_instance()")
 
-    # Function call to generate robust data
+    # Function call to generate robust data in generate_data.jl
     println("calling create_robust_data()")
-    D, Q, θ, a_val, set_SV, set_SVB = create_robust_data(s1, B_sb)
+    D, Q, θ, a_val, set_SV, set_SVB = create_robust_data(s1, B_sb, data_entries)
 
     # Create instance
     rob_ins = RobInstance(
 
-        B_sb, # param from gen func
-        PC_s, # param from gen func
-        D_s, # param from gen func
+        B_sb, 
 
-        D, # func call
-        Q, # func call
-        θ, # func call
-        a_val, # func call
+        D, 
+        Q,
+        θ,
+        a_val,
 
-        set_SV, # func call 
-        set_SVB # func call
+        set_SV,
+        set_SVB
 
-        #= What are these ?
-        C_b, # same as CB_b above? not def anywhere
-        T_b, # TC_sb or transportation cost?
-        P_b, # same as PC_b above? not def anywhere
-
-        H, # not defined anywhere 
-        =#
     )
 
     return rob_ins
