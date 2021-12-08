@@ -306,7 +306,7 @@ function turn_model_robust(m, det_ins, rob_ins)
         α * (
             sum(a_b[ib] *
                 sum(
-                    sum(D[s2,iSV] * B_sb[s2,ib] * # UNSURE: B_sb needed here or not?
+                    sum(D[s2,iSV] * # B_sb[s2,ib] * # UNSURE: B_sb needed here or not?
                         sum(
                             (λ[s1,iSV]-μ[s1,iSV]) * Q[s1,s2] 
                         for s1 in s)
