@@ -452,7 +452,7 @@ function create_robust_data(s1, B_sb, data_entries)
     # Filtering the support vectors and the boundary support vectors
     #  - SV: values at lower boundary 0, the rest 1 
     #  - SVB: values at upper and lower boundary 0, the rest 1
-    ϵ = 1e-12 # tolerance for zero: helps finding boundary points correctly.
+    ϵ = 1e-6 # tolerance for zero: helps finding boundary points correctly.
     SV = [α_val[i] > 0 + ϵ ? 1 : 0 for i in 1:M]
     SVB = [α_val[i] > 0 + ϵ  && α_val[i] < 1/(M * ν) - ϵ ? 1 : 0 for i in 1:M]
 

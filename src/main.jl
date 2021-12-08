@@ -60,7 +60,7 @@ println("solve_time: $(solve_time(m_nlm_opt))");
 println("Large problem start")
 
 # Create the data for the larger problem
-suppliers = 30 
+suppliers = 50 
 data_entries = 100 # for SVC model in robust data generation
 det_ins, rob_ins = create_general_instance(suppliers, data_entries)
 
@@ -91,11 +91,11 @@ println("x_det: $(value.(M_det_opt[:x]))");
 println("obj_det: $(objective_value(M_det_opt))");
 println("solve_time: $(solve_time(M_det_opt))");
 
-#println("\nNMDT ROBUST MODEL RESULTS\n")
-#println("x_det: $(value.(M_rob_opt[:x]))");
-#println("obj_det: $(objective_value(M_rob_opt))");
-#println("solve_time: $(solve_time(M_rob_opt))");
-##@info value.(M_rob_opt[:slack]) == 0.0 ? "Model is feasible." : "Model is infeasible. Demand not met: $(value.(slack))"
+println("\nNMDT ROBUST MODEL RESULTS\n")
+println("x_det: $(value.(M_rob_opt[:x]))");
+println("obj_det: $(objective_value(M_rob_opt))");
+println("solve_time: $(solve_time(M_rob_opt))");
+# @info value.(M_rob_opt[:slack]) == 0.0 ? "Model is feasible." : "Model is infeasible. Demand not met: $(value.(slack))"
 
 println("\nNONLINEAR MODEL RESULTS\n")
 println("x_det: $(value.(M_nlm_opt[:x]))");

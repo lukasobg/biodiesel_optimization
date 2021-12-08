@@ -325,8 +325,8 @@ function turn_model_robust(m, det_ins, rob_ins)
     )
 
     # 43
-    @constraint(m, [k in b, j in s],
-        sum(sum(Q[j,j1] * (λ[j1,i] - μ[j1,i]) for j1 in s) for i in set_SV) == x[j,k]
+    @constraint(m, [j in s],
+        sum(sum(Q[j,j1] * (λ[j1,i] - μ[j1,i]) for j1 in s) for i in set_SV) == sum(x[j,k] for k in b)
     )
 
     # UNSURE: Update objective to have slack or not 
