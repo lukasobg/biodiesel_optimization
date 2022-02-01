@@ -4,7 +4,7 @@ mutable struct DetInstance
     b1::Int64
     s1::Int64
     k::UnitRange{Int64}
-    p::Int64
+    #p::Int64 # now param in create_linear_model()
 
     a_b::Vector{Float64}
     D_tot::Int64

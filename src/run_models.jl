@@ -7,7 +7,7 @@
 # Constraints #3 and #6 are replaced with NMDT
 #
 # Returns model m
-function create_linear_model(m, ins)
+function create_linear_model(m, ins, accuracy)
 
     println("calling create_linear_model()")
     
@@ -15,7 +15,8 @@ function create_linear_model(m, ins)
     b1 = ins.b1; b = 1:b1 
     s1 = ins.s1; s = 1:s1
     k = ins.k
-    p = ins.p; l = 1:p
+    #p = ins.p; l = 1:p
+    p = accuracy; l = 1:p
 
     a_b = ins.a_b
     D_tot = ins.D_tot
@@ -296,27 +297,23 @@ function turn_model_robust(m, det_ins, rob_ins)
 
     # Robust constraints
 
-    println()
     println("Time taken in constraint 41)")
-    @time begin
+    t_cons = @elapsed begin
 
     # 41 first alpha is alpha from det model
     # (processing yield of biomass b)
     @constraint(m, [ii in set_SVB],
         α * (
             sum(a_b[ib] *
-                sum(
-                    sum(D[s2,iSV] * # B_sb[s2,ib] * # UNSURE: B_sb needed here or not?
-                        sum(
-                            (λ[s1,iSV]-μ[s1,iSV]) * Q[s1,s2] 
-                        for s1 in s)
-                    for s2 in s)
-                for iSV in set_SV) 
+                sum(D[s2,iSV] *
+                    sum( (λ[s1,iSV]-μ[s1,iSV]) * Q[s1,s2] for s1 in s)
+                for s2 in s for iSV in set_SV) 
             for ib in b)) - 
         η*θ[ii] >= D_tot * 100 - slack # UNSURE: use slack or not
     );
 
     end
+    println(t_cons)
     println()
 
     # 42 
@@ -339,5 +336,5 @@ function turn_model_robust(m, det_ins, rob_ins)
          HC*q + 1e3*slack
     );
 
-    return m
+    return m, t_cons
 end

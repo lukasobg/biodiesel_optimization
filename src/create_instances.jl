@@ -54,13 +54,13 @@ end
 # Data returned as struct 
 # - det_ins which is used in deterministic optimization
 # - rob_ins which is used in robust optimization
-function create_general_instance(suppliers, data_entries)
+function create_general_instance(suppliers, data_entries, cap_factor, risk_v)
 
     # Sets
     b1=3;         #number of biomass  
     s1=suppliers; #number of suppliers, set in main.jl
     k=0:9;        #decimal digits
-    p=1;          #cardinal of l:1,2 or 3 
+    #p=accuracy;   #cardinal of l:1,2 or 3 # now set in create_linear_model(,,p)
 
     a_b=[0.94; 0.95 ; 0.98]; #used in overleaf 
     D_tot=1500;
@@ -71,7 +71,7 @@ function create_general_instance(suppliers, data_entries)
     #  - D_s: param of rob. model
     #  - x_sb_min
     #  - s1
-    PC_s, B_sb, D_s, x_sb_min, s1 = create_supply_and_capillarity(s1, D_tot)
+    PC_s, B_sb, D_s, x_sb_min, s1 = create_supply_and_capillarity(s1, D_tot, cap_factor)
     
     p_high=0.2 #for small suppliers
     p_low=0.05 #for big suppliers, for capillarity expansion
@@ -104,7 +104,7 @@ function create_general_instance(suppliers, data_entries)
         b1,
         s1, # updated in capillarity expansion
         k,
-        p,
+        #p, set in create_linear_model(,,p)
 
         a_b,
         D_tot,
@@ -127,7 +127,7 @@ function create_general_instance(suppliers, data_entries)
     ) 
 
     # Function call to create the robust instance
-    rob_ins = create_robust_instance(s1, B_sb, data_entries)
+    rob_ins = create_robust_instance(s1, B_sb, data_entries, risk_v)
 
     return det_ins, rob_ins;
 end
@@ -135,13 +135,13 @@ end
 # Function creates the robust instance.
 #
 # Used in function above.
-function create_robust_instance(s1, B_sb, data_entries)
+function create_robust_instance(s1, B_sb, data_entries, risk_v)
 
     println("calling create_robust_instance()")
 
     # Function call to generate robust data in generate_data.jl
     println("calling create_robust_data()")
-    D, Q, θ, a_val, set_SV, set_SVB = create_robust_data(s1, B_sb, data_entries)
+    D, Q, θ, a_val, set_SV, set_SVB = create_robust_data(s1, B_sb, data_entries, risk_v)
 
     # Create instance
     rob_ins = RobInstance(

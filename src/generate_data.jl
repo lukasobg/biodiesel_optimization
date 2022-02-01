@@ -7,7 +7,7 @@
 #
 # Returns updated supply values after both function calls
 # PC_s, B_sb, D_s, x_sb_min, s1
-function create_supply_and_capillarity(s1, D_tot)
+function create_supply_and_capillarity(s1, D_tot, capillarity_factor)
 
     println("calling create_supply_and_capillarity()")
 
@@ -46,7 +46,7 @@ function create_supply_and_capillarity(s1, D_tot)
                                               sdMINAF, avgMINAF,
                                               sdMINWCO, avgMINWCO)
 
-    capillarity_factor=2; #give as input, test different levels
+    # capillarity_factor=2; #give as input, test different levels # SET IN main.jl
 
     # Implement capillarity expansion for CO suppliers
     # Updates supply parameters
@@ -315,7 +315,7 @@ end
 #  - data_entries: number of entries to use in SVC model
 #
 # Returns the robust data
-function create_robust_data(s1, B_sb, data_entries)
+function create_robust_data(s1, B_sb, data_entries, risk_ν)
 
     s = 1:s1
 
@@ -416,7 +416,7 @@ function create_robust_data(s1, B_sb, data_entries)
 
     # Step 3: derive the support vector clustering (SVC) model
 
-    ν = 0.05;   # regularisation parameter
+    # risk_ν = 0.1;   # regularisation parameter
 
     SVC_Model = Model(Gurobi.Optimizer);
     #set_optimizer_attributes(SVC_Model, "mehrotra_algorithm" => "yes");
@@ -431,7 +431,7 @@ function create_robust_data(s1, B_sb, data_entries)
     );
 
     @constraint(SVC_Model, sum(α[i] for i in 1:M) == 1); # 38)
-    @constraint(SVC_Model, [i in 1:M], α[i] * (M * ν) <= 1); # 39)
+    @constraint(SVC_Model, [i in 1:M], α[i] * (M * risk_ν) <= 1); # 39)
 
     println(" ----- SVC model ----- ")
     optimize!(SVC_Model)
@@ -454,7 +454,7 @@ function create_robust_data(s1, B_sb, data_entries)
     #  - SVB: values at upper and lower boundary 0, the rest 1
     ϵ = 1e-6 # tolerance for zero: helps finding boundary points correctly.
     SV = [α_val[i] > 0 + ϵ ? 1 : 0 for i in 1:M]
-    SVB = [α_val[i] > 0 + ϵ  && α_val[i] < 1/(M * ν) - ϵ ? 1 : 0 for i in 1:M]
+    SVB = [α_val[i] > 0 + ϵ  && α_val[i] < 1/(M * risk_ν) - ϵ ? 1 : 0 for i in 1:M]
 
     # Forming the sets with (boundary) support vectors
     # Collect indexes of 1s
