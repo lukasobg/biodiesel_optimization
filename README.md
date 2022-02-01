@@ -54,6 +54,21 @@ Model optimisation functions:
 
 These functions are called directly from the *main.jl* file.
 
+### *benchmarks.jl*
+This file contains functions for benchmarking. Some changes required when benchmarking a deterministic v robust model. 
+- **benchmark_model()**: runs 11 iterations of benchmarking. 11 data instances, 4 models each: nlm, nmdt with p=2, nmdt with p=3, nmdt with p=4.
+- **save_benchmark()**: prints out benchmark times and stores in csv files.
+
+### *model_results.jl*
+- **get_results()**: gets a solved model as parameter, prints out and stores the relevant data in csv-files.
+## The benchmarks folder 
+
+This folder contains benchmark data as csv-files. Separate folders for deterministic and robust model benchmarks. 
+
+## The final_model folder 
+
+This folder contains the model results for the final model.
+
 ## Other files
 The original code files (not in use):
 - *original_code.jl*  

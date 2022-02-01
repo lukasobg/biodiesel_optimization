@@ -112,7 +112,7 @@ println("solve_time: $(solve_time(M_nlm_opt))");
 
 # --------------------------- Benchmarks ------------------------------------
 t_total = @elapsed begin
-    file = "benchmarks/deterministic/______.csv"
+    file = "../benchmarks/deterministic/______.csv"
 
     data_entries = 50 #100 # for SVC model in robust data generation
     suppliers = 100 
@@ -153,7 +153,7 @@ for c in capillarity_factors
         M_opt = run_linear_model(M)
 
         # get results
-        res_file = string("final_model/model2/capf_",c,"_risk_",v,".csv")
+        res_file = string("../final_model/model2/capf_",c,"_risk_",v,".csv")
 
         if result_count(M_opt) > 0
             get_results(M_opt,res_file)
