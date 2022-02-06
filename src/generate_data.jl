@@ -315,7 +315,10 @@ end
 #  - data_entries: number of entries to use in SVC model
 #
 # Returns the robust data
-function create_robust_data(s1, B_sb, data_entries, risk_ν)
+function create_robust_data(det_ins, data_entries)
+
+    s1 = det_ins.s1
+    B_sb = det_ins.B_sb
 
     s = 1:s1
 
@@ -413,10 +416,17 @@ function create_robust_data(s1, B_sb, data_entries, risk_ν)
         end
     end
 
+    return Km, M, D, Q
+end
+
+function create_SVC_data(rob_ins, risk_ν)
+
+    Km = rob_ins.Km
+    M = rob_ins.M
+    D = rob_ins.D
+    Q = rob_ins.Q
 
     # Step 3: derive the support vector clustering (SVC) model
-
-    # risk_ν = 0.1;   # regularisation parameter
 
     SVC_Model = Model(Gurobi.Optimizer);
     #set_optimizer_attributes(SVC_Model, "mehrotra_algorithm" => "yes");
@@ -475,6 +485,6 @@ function create_robust_data(s1, B_sb, data_entries, risk_ν)
         θ[i1] = sum(α_val[i] * norm(Q * (D[:,i1] - D[:,i]), 1) for i in set_SV)
     end
 
-    return D, Q, θ, α_val, set_SV, set_SVB
+    return θ, α_val, set_SV, set_SVB 
 
 end

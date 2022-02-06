@@ -111,6 +111,7 @@ println("solve_time: $(solve_time(M_nlm_opt))");
 =#
 
 # --------------------------- Benchmarks ------------------------------------
+#=
 t_total = @elapsed begin
     file = "../benchmarks/deterministic/______.csv"
 
@@ -124,63 +125,67 @@ end
 minutes = t_total/60
 println("Total time taken: $(t_total)")
 println("in minutes: $(minutes)")
+=#
 
 # --------------------------- FINAL MODEL ------------------------------------
-#=
+
+results = []
 
 # set params
-suppliers = 50
-data_entries = 50 # for SVC model in robust data generation
-accuracy_p = 2
+suppliers = 25 
+data_entries = 100 # for SVC model in robust data generation
 
-capillarity_factors = [2,3,5]
-risk_levels = [0.01,0.1,0.2]
+capillarity_factors = [1,2,3]
+risk_levels = [0.01,0.1,0.2,0.4,0.95]
 
-for c in capillarity_factors
+t_main = @elapsed begin
+    for c in capillarity_factors
 
-    # Run robust models
-    for v in risk_levels
+        # create det instance
+        det_ins = create_deterministic_instance(suppliers, c)
 
-        # create data instance
-        det_ins, rob_ins = create_general_instance(suppliers, data_entries, c, v)
+        # create rob instance
+        rob_ins = create_robust_instance(det_ins, data_entries)
 
-        # create model
-        M0 = Model(Gurobi.Optimizer)
-        M = create_linear_model(M0, det_ins, accuracy_p)
-        M,t = turn_model_robust(M, det_ins, rob_ins)
-
-        # optimise model
-        M_opt = run_linear_model(M)
-
-        # get results
-        res_file = string("../final_model/model2/capf_",c,"_risk_",v,".csv")
-
-        if result_count(M_opt) > 0
-            get_results(M_opt,res_file)
+        # ROBUST MODELS WITH DIFF RISK LEVEL
+        for v in risk_levels
+            # - create svc ins
+            # - init model
+            # - create model
+            # - turn robust
+            # - optimise
+            # - save results
+            svc_ins = create_SVC_instance(rob_ins, v)
+            M0 =      Model(Gurobi.Optimizer)
+            M =       create_nonlinear_model(M0, det_ins)
+            M_rob,t = turn_model_robust(M, det_ins, rob_ins, svc_ins)
+            M_opt =   run_nonlinear_model(M_rob)
+            res_rob = get_results(M_opt,c,v)
+            push!(results, res_rob)
+            println("-------------------------------------------------------------------------- MODEL CAP $c RISK $v SOLVED")
         end
 
-        println("-------------------------------------------------------------------------- MODEL CAP $c RISK $v SOLVED")
-
+        # DETERMINISTIC MODEL
+        # - init model
+        # - create model
+        # - optimise
+        # - save results
+        M0 =      Model(Gurobi.Optimizer)
+        M =       create_nonlinear_model(M0, det_ins)
+        M_opt =   run_nonlinear_model(M)
+        res_det = get_results(M_opt,c,'-')
+        push!(results, res_det)
+        println("-------------------------------------------------------------------------- MODEL CAP $c DET SOLVED")
     end
-
-    # Run deterministic model
-
-    # create data instance
-    det_ins, rob_ins = create_general_instance(suppliers, data_entries, c, 0.1)
-
-    # create model
-    M0 = Model(Gurobi.Optimizer)
-    M = create_linear_model(M0, det_ins, accuracy_p)
-
-    # optimise model
-    M_opt = run_linear_model(M)
-
-    # get results
-    res_file = string("final_model/capf_",c,"_det.csv")
-    
-    if result_count(M_opt) > 0
-        get_results(M_opt,res_file)
-    end
-
 end
-=#
+
+res_file = string("../final_model/model12.csv")
+open(res_file; write=true) do f
+     write(f, "cap;risk;PFAD;AF;CO;total biom;prod biod;demand;quality;prod cost;trans cost;process cost;hydro cost;total cost\n")
+     writedlm(f, results, ';')
+end
+
+
+println("Total time taken: $(t_main)")
+println("in minutes: $(t_main/60)")
+println("in hours: $(t_main/3600)")

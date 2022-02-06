@@ -3,9 +3,11 @@
 mutable struct DetInstance 
     b1::Int64
     s1::Int64
+
     k::UnitRange{Int64}
     #p::Int64 # now param in create_linear_model()
 
+    B_sb::Matrix{Float64}
     a_b::Vector{Float64}
     D_tot::Int64
 
@@ -30,10 +32,14 @@ end
 # Structure RobInstance contains all the
 # robust data of a problem to be optimized
 mutable struct RobInstance
-    B_sb::Matrix{Float64}
+    D::Matrix{Float64} # uncertainty matrix
+    Q::Matrix{Float64} # covariance matrix
 
-    D::Matrix{Float64}
-    Q::Matrix{Float64}
+    Km
+    M
+end
+
+mutable struct SVCInstance
     θ::Dict{Any, Any}
     α_val::Vector{Float64}
 

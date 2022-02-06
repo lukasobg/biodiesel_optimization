@@ -1,4 +1,9 @@
-function get_results(m,file)
+function get_results(m,c,v)
+
+
+    if result_count(m) == 0
+        return [c,v,"infeasible"]
+    end
 
     # Total biomass bought (sum of x)
 
@@ -34,16 +39,26 @@ function get_results(m,file)
 
     # Total cost
 
+    prod_cost = value.(m[:prod_cost])
+    trans_cost = value.(m[:trans_cost])
+    process_cost = value.(m[:process_cost])
+    hydro_cost = value.(m[:hydro_cost])
+
+    println("Production cost: $(prod_cost)")
+    println("Transportation cost: $(trans_cost)")
+    println("Processing cost: $(process_cost)")
+    println("Hydrotreatment cost: $(hydro_cost)")
+
     total_cost = objective_value(m)
     println("Total cost: $(total_cost)")
+    println("should equal: $(prod_cost + trans_cost + process_cost + hydro_cost)")
 
-    data = [(PFAD_biomass, AF_biomass, CO_biomass, total_biomass,
-             total_biodiesel, demand,
-             quality, total_cost)]
+    data = [c,v,
+            PFAD_biomass, AF_biomass, CO_biomass, total_biomass,
+            total_biodiesel, demand,
+            quality,
+            prod_cost, trans_cost, process_cost, hydro_cost, total_cost]
 
-    open(file; write=true) do f
-         write(f, "PFAD;AF;CO;total biom;prod biod;demand;quality;total cost\n")
-         writedlm(f, data, ';')
-    end
+    return data
 
 end

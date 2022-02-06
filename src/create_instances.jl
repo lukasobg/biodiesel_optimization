@@ -54,7 +54,7 @@ end
 # Data returned as struct 
 # - det_ins which is used in deterministic optimization
 # - rob_ins which is used in robust optimization
-function create_general_instance(suppliers, data_entries, cap_factor, risk_v)
+function create_deterministic_instance(suppliers, cap_factor)
 
     # Sets
     b1=3;         #number of biomass  
@@ -105,6 +105,7 @@ function create_general_instance(suppliers, data_entries, cap_factor, risk_v)
         s1, # updated in capillarity expansion
         k,
         #p, set in create_linear_model(,,p)
+        B_sb,
 
         a_b,
         D_tot,
@@ -127,36 +128,48 @@ function create_general_instance(suppliers, data_entries, cap_factor, risk_v)
     ) 
 
     # Function call to create the robust instance
-    rob_ins = create_robust_instance(s1, B_sb, data_entries, risk_v)
+    #rob_ins = create_robust_instance(s1, B_sb, data_entries, risk_v)
 
-    return det_ins, rob_ins;
+    #return det_ins, rob_ins;
+    return det_ins
 end
 
 # Function creates the robust instance.
 #
 # Used in function above.
-function create_robust_instance(s1, B_sb, data_entries, risk_v)
+function create_robust_instance(det_ins, data_entries)
 
     println("calling create_robust_instance()")
 
     # Function call to generate robust data in generate_data.jl
     println("calling create_robust_data()")
-    D, Q, θ, a_val, set_SV, set_SVB = create_robust_data(s1, B_sb, data_entries, risk_v)
+    Km, M, D, Q = create_robust_data(det_ins, data_entries)
 
     # Create instance
     rob_ins = RobInstance(
-
-        B_sb, 
-
         D, 
         Q,
-        θ,
-        a_val,
 
-        set_SV,
-        set_SVB
-
+        Km,
+        M
     )
 
     return rob_ins
+end
+
+function create_SVC_instance(rob_ins, risk_ν)
+
+    println("calling create_SVC_data()")
+    θ, α_val, set_SV, set_SVB = create_SVC_data(rob_ins, risk_ν)
+
+    # Create instance
+    SVC_ins = SVCInstance(
+        θ,
+        α_val,
+
+        set_SV,
+        set_SVB
+    )
+
+    return SVC_ins
 end

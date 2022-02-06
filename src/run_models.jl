@@ -105,7 +105,13 @@ function create_linear_model(m, ins, accuracy)
 
     
     # ------------------------ Set the objective --------------------------
-    @objective(m, Min, sum(sum((CB_b[j]+TC_sb[i]+PC_b[j])*x[i,j] for j=1:b1) for i=1:s1)+HC*q);
+    @expression(m, prod_cost, sum(sum((CB_b[j])*x[i,j] for j=1:b1) for i=1:s1));
+    @expression(m, trans_cost, sum(sum((TC_sb[i])*x[i,j] for j=1:b1) for i=1:s1));
+    @expression(m, process_cost, sum(sum((PC_b[j])*x[i,j] for j=1:b1) for i=1:s1));
+    @expression(m, hydro_cost, HC*q);
+
+    #@objective(m, Min, sum(sum((CB_b[j]+TC_sb[i]+PC_b[j])*x[i,j] for j=1:b1) for i=1:s1)+HC*q);
+    @objective(m, Min, prod_cost + trans_cost + process_cost + hydro_cost);
 
     return m
 end
@@ -148,8 +154,6 @@ function create_nonlinear_model(m, ins)
     # ------------------ Get problem data from ins -------------------
     b1 = ins.b1; b = 1:b1 
     s1 = ins.s1; s = 1:s1
-    #k = ins.k # NMDT
-    #p = ins.p; l = 1:p # NMDT
 
     a_b = ins.a_b
     D_tot = ins.D_tot
@@ -193,8 +197,13 @@ function create_nonlinear_model(m, ins)
     @constraint(m, demand_fullfillment, z>=D_tot); #10
      
     # ------------------------ Set the objective --------------------------
-    @objective(m, Min, sum(sum((CB_b[j]+TC_sb[i]+PC_b[j])*x[i,j] for j=1:b1) for i=1:s1)+HC*q);
+    @expression(m, prod_cost, sum(sum((CB_b[j])*x[i,j] for j=1:b1) for i=1:s1));
+    @expression(m, trans_cost, sum(sum((TC_sb[i])*x[i,j] for j=1:b1) for i=1:s1));
+    @expression(m, process_cost, sum(sum((PC_b[j])*x[i,j] for j=1:b1) for i=1:s1));
+    @expression(m, hydro_cost, HC*q);
 
+    #@objective(m, Min, sum(sum((CB_b[j]+TC_sb[i]+PC_b[j])*x[i,j] for j=1:b1) for i=1:s1)+HC*q);
+    @objective(m, Min, prod_cost + trans_cost + process_cost + hydro_cost);
     return m
 end
 
@@ -243,47 +252,36 @@ end
 # created in create_instances.jl
 #
 # Returns robust version of model m
-function turn_model_robust(m, det_ins, rob_ins)
+function turn_model_robust(m, det_ins, rob_ins, svc_ins)
 
     println("calling turn_model_robust()")
 
     # ------------------ Get problem data from det_ins -------------------
     b1 = det_ins.b1; b = 1:b1
     s1 = det_ins.s1; s = 1:s1
-    #k = det_ins.k # NMDT
-    #p = ins.p; l = 1:p # NMDT
 
+    B_sb = det_ins.B_sb
     a_b = det_ins.a_b 
     D_tot = det_ins.D_tot
-
-    #x_sb_min = det_ins.x_sb_min
-    #x_sb_max = det_ins.x_sb_max
-
-    #V_b_min = det_ins.V_b_min
-    #V_b_max = det_ins.V_b_max
-
-    #rho_sb = det_ins.rho_sb
-    #rho_min = det_ins.rho_min
-    #rho_max = det_ins.rho_max
 
     α = det_ins.α
 
     # Needed only if objective is updated
     CB_b = det_ins.CB_b
-    TC_sb = det_ins.TC_sb
     PC_b = det_ins.PC_b
+    TC_sb = det_ins.TC_sb
     HC = det_ins.HC
 
     # ------------------ Get problem data from rob_ins -------------------
-    B_sb = rob_ins.B_sb
-
     D = rob_ins.D
     Q = rob_ins.Q
-    θ = rob_ins.θ
-    α_val = rob_ins.α_val
 
-    set_SV = rob_ins.set_SV
-    set_SVB = rob_ins.set_SVB
+    # ------------------ Get problem data from SVC_ins -------------------
+    θ = svc_ins.θ
+    α_val = svc_ins.α_val
+
+    set_SV = svc_ins.set_SV
+    set_SVB = svc_ins.set_SVB
 
     # Variables from deterministic used in constraints here
     x = m[:x]
