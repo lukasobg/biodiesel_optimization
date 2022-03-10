@@ -112,7 +112,7 @@ println("solve_time: $(solve_time(M_nlm_opt))");
 
 # --------------------------- Benchmarks ------------------------------------
 t_total = @elapsed begin
-    file = "../benchmarks_mac/det/500suppliers.csv"
+    file = "../benchmarks/det/500suppliers.csv"
 
     data_entries = 50 #100 # for SVC model in robust data generation
     suppliers = 500 
