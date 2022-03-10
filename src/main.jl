@@ -111,12 +111,11 @@ println("solve_time: $(solve_time(M_nlm_opt))");
 =#
 
 # --------------------------- Benchmarks ------------------------------------
-#=
 t_total = @elapsed begin
-    file = "../benchmarks/deterministic/______.csv"
+    file = "../benchmarks_mac/det/500suppliers.csv"
 
     data_entries = 50 #100 # for SVC model in robust data generation
-    suppliers = 100 
+    suppliers = 500 
 
     bm_times = benchmark_model(data_entries, suppliers)
 
@@ -125,9 +124,9 @@ end
 minutes = t_total/60
 println("Total time taken: $(t_total)")
 println("in minutes: $(minutes)")
-=#
 
 # --------------------------- FINAL MODEL ------------------------------------
+#=
 
 results = []
 
@@ -189,3 +188,4 @@ end
 println("Total time taken: $(t_main)")
 println("in minutes: $(t_main/60)")
 println("in hours: $(t_main/3600)")
+=#

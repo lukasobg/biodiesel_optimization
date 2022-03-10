@@ -14,9 +14,9 @@ function benchmark_model(data_entries, suppliers)
         println("-------------------------------------------------------------------------- INSTANCE $i START")
         # Create the data for the larger problem
         cap_factor = 2
-        det_ins, rob_ins = create_general_instance(suppliers, data_entries, cap_factor, risk_v)
 
-        # Model 1
+        det_ins = create_deterministic_instance(suppliers, cap_factor)
+
         M0_nlm = Model(Gurobi.Optimizer)
         M0_nmdt2 = Model(Gurobi.Optimizer)
         M0_nmdt3 = Model(Gurobi.Optimizer)
@@ -26,25 +26,21 @@ function benchmark_model(data_entries, suppliers)
 
         t_build1 = @elapsed begin
             M_nlm = create_nonlinear_model(M0_nlm, det_ins)
-            #M_nlm, t_cons1 = turn_model_robust(M_nlm, det_ins, rob_ins)
         end
         println("-------------------------------------------------------------------------- INSTANCE $i MODEL 1 BUILT")
 
         t_build2 = @elapsed begin
             M_nmdt2 = create_linear_model(M0_nmdt2, det_ins, 2)
-            #M_nmdt2, t_cons2 = turn_model_robust(M_nmdt2, det_ins, rob_ins)
         end
         println("-------------------------------------------------------------------------- INSTANCE $i MODEL 2 BUILT")
 
         t_build3 = @elapsed begin
             M_nmdt3 = create_linear_model(M0_nmdt3, det_ins, 3)
-            #M_nmdt3, t_cons3 = turn_model_robust(M_nmdt3, det_ins, rob_ins)
         end
         println("-------------------------------------------------------------------------- INSTANCE $i MODEL 3 BUILT")
 
         t_build4 = @elapsed begin
             M_nmdt4 = create_linear_model(M0_nmdt4, det_ins, 4)
-            #M_nmdt4, t_cons4 = turn_model_robust(M_nmdt4, det_ins, rob_ins)
         end
         println("-------------------------------------------------------------------------- INSTANCE $i MODEL 4 BUILT")
 
