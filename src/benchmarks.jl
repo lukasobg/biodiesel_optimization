@@ -5,15 +5,13 @@
 # If running robust:
 #  - comment in turn_model_robust() calls in # Build section
 #  - return times WITH t_cons times
-function benchmark_model(data_entries, suppliers)
+function benchmark_model(suppliers, cap_factor)
 
-    risk_v = 0.05
     times = []
 
     for i in 1:11
         println("-------------------------------------------------------------------------- INSTANCE $i START")
         # Create the data for the larger problem
-        cap_factor = 2
 
         det_ins = create_deterministic_instance(suppliers, cap_factor)
 

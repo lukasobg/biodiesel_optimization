@@ -15,8 +15,9 @@ function create_toy_instance()
         3,     # b1: number of biomass  
         12,    # s1: number of suppliers 
         0:9,   # k:  decimal digits for NMDT
-        1,     # p:  cardinal of l:1,2 or 3 
+        #1,     # p:  cardinal of l:1,2 or 3 
     
+        B_sb,
         [0.94; 0.95 ; 0.98], # a_b
         1500,                # D_tot
     
@@ -48,12 +49,10 @@ function create_toy_instance()
 
 end
 
-# Function creates a GENERAL problem instance with all the data.
-# Contains data for deterministic and robust optimization.
+# Function creates the deterministic problem instance with all the data.
 # 
 # Data returned as struct 
 # - det_ins which is used in deterministic optimization
-# - rob_ins which is used in robust optimization
 function create_deterministic_instance(suppliers, cap_factor)
 
     # Sets
@@ -135,8 +134,6 @@ function create_deterministic_instance(suppliers, cap_factor)
 end
 
 # Function creates the robust instance.
-#
-# Used in function above.
 function create_robust_instance(det_ins, data_entries)
 
     println("calling create_robust_instance()")
@@ -157,6 +154,7 @@ function create_robust_instance(det_ins, data_entries)
     return rob_ins
 end
 
+# Function creates the svc instance.
 function create_SVC_instance(rob_ins, risk_ν)
 
     println("calling create_SVC_data()")

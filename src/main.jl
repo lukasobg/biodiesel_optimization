@@ -28,10 +28,7 @@ include("model_results.jl")
 Random.seed!(1234);
 
 # --------------------------- Simple example problem ------------------------------------
-#= OUTDATED FUNCTION CALLS (PARAM CHANGES)
-
-println("Small problem start")
-
+#=
 # Create the data for the example problem
 toy_ins = create_toy_instance()
 
@@ -40,152 +37,92 @@ m0_det = Model(Gurobi.Optimizer) # NMDT - deterministic
 m0_nlm = Model(Gurobi.Optimizer) # nonlinear
 
 # Create the models with the problem data from toy_ins
-m_det = create_linear_model(m0_det, toy_ins)
 m_nlm = create_nonlinear_model(m0_nlm, toy_ins)
 
 # Optimize the models with the problem data from toy_ins
-println("\nNMDT DETERMINISTIC (TOY) MODEL OPTIMISATION\n")
-m_det_opt = run_linear_model(m_det)
 println("\nNONLINEAR (TOY) MODEL OPTIMISATION\n")
 m_nlm_opt = run_nonlinear_model(m_nlm) 
 
 # Results
-println("\nNMDT DETERMINISTIC (TOY) MODEL RESULTS\n")
-println("x_det: $(value.(m_det_opt[:x]))");
-println("obj_det: $(objective_value(m_det_opt))");
-println("solve_time: $(solve_time(m_det_opt))");
-
-println("\nNONLINEAR (TOY) MODEL RESULTS\n")
-println("x_det: $(value.(m_nlm_opt[:x]))");
-println("obj_det: $(objective_value(m_nlm_opt))");
-println("solve_time: $(solve_time(m_nlm_opt))");
-
+results = get_results(m_nlm_opt,"-","det")
 =#
-# --------------------------- Large example problem --------------------------------------
-#= OUTDATED FUNCTION CALLS (PARAM CHANGES)
-
-println("Large problem start")
-
-# Create the data for the larger problem
-suppliers = 20 
-data_entries = 100 # for SVC model in robust data generation
-det_ins, rob_ins = create_general_instance(suppliers, data_entries)
-
-# Initialize models
-#M0_det = Model(Gurobi.Optimizer) # NMDT - deterministic 
-M0_rob = Model(Gurobi.Optimizer) # NMDT - robust 
-#M0_nlm = Model(Gurobi.Optimizer) # nonlinear
-
-# Create the models with the problem data from det_ins and rob_ins
-#M_det = create_linear_model(M0_det, det_ins)
-
-M_rob = create_linear_model(M0_rob, det_ins)
-M_rob = turn_model_robust(M_rob, det_ins, rob_ins)
-
-#M_nlm = create_nonlinear_model(M0_nlm, det_ins)
-
-# Optimize the models with the problem data from det_ins and rob_ins
-println("\nNMDT DETERMINISTIC MODEL OPTIMISATION\n")
-M_det_opt = run_linear_model(M_det)
-println("\nNMDT ROBUST MODEL OPTIMISATION\n")
-M_rob_opt = run_linear_model(M_rob) 
-println("\nNONLINEAR MODEL OPTIMISATION\n")
-M_nlm_opt = run_nonlinear_model(M_nlm) 
-
-# Results
-println("\nNMDT DETERMINISTIC MODEL RESULTS\n")
-println("x_det: $(value.(M_det_opt[:x]))");
-println("obj_det: $(objective_value(M_det_opt))");
-println("solve_time: $(solve_time(M_det_opt))");
-
-println("\nNMDT ROBUST MODEL RESULTS\n")
-println("x_det: $(value.(M_rob_opt[:x]))");
-println("obj_det: $(objective_value(M_rob_opt))");
-println("solve_time: $(solve_time(M_rob_opt))");
-# @info value.(M_rob_opt[:slack]) == 0.0 ? "Model is feasible." : "Model is infeasible. Demand not met: $(value.(slack))"
-
-println("\nNONLINEAR MODEL RESULTS\n")
-println("x_det: $(value.(M_nlm_opt[:x]))");
-println("obj_det: $(objective_value(M_nlm_opt))");
-println("solve_time: $(solve_time(M_nlm_opt))");
-=#
-
 # --------------------------- Benchmarks ------------------------------------
+#=
 t_total = @elapsed begin
-    file = "../benchmarks/det/500suppliers.csv"
+    cap_factor = 10
+    suppliers = 250 
 
-    data_entries = 50 #100 # for SVC model in robust data generation
-    suppliers = 500 
+    file = "../benchmarks_new/$(suppliers)suppliers_$(cap_factor)capf.csv"
+    println(file)
 
-    bm_times = benchmark_model(data_entries, suppliers)
+    bm_times = benchmark_model(suppliers, cap_factor)
 
     save_benchmark(bm_times, file)
 end
 minutes = t_total/60
 println("Total time taken: $(t_total)")
 println("in minutes: $(minutes)")
-
+=#
 # --------------------------- FINAL MODEL ------------------------------------
-#=
-
 results = []
 
 # set params
-suppliers = 25 
-data_entries = 100 # for SVC model in robust data generation
-
-capillarity_factors = [1,2,3]
-risk_levels = [0.01,0.1,0.2,0.4,0.95]
+suppliers = [300,1000] 
+capillarities = [2,5,10]
 
 t_main = @elapsed begin
-    for c in capillarity_factors
+    for sup in suppliers 
+        for cap in capillarities
+            Random.seed!(1234);
+            # create det instance
+            det_ins = create_deterministic_instance(sup,cap)
 
-        # create det instance
-        det_ins = create_deterministic_instance(suppliers, c)
-
-        # create rob instance
-        rob_ins = create_robust_instance(det_ins, data_entries)
-
-        # ROBUST MODELS WITH DIFF RISK LEVEL
-        for v in risk_levels
-            # - create svc ins
+            # DETERMINISTIC MODEL
             # - init model
             # - create model
-            # - turn robust
             # - optimise
             # - save results
-            svc_ins = create_SVC_instance(rob_ins, v)
             M0 =      Model(Gurobi.Optimizer)
             M =       create_nonlinear_model(M0, det_ins)
-            M_rob,t = turn_model_robust(M, det_ins, rob_ins, svc_ins)
-            M_opt =   run_nonlinear_model(M_rob)
-            res_rob = get_results(M_opt,c,v)
-            push!(results, res_rob)
-            println("-------------------------------------------------------------------------- MODEL CAP $c RISK $v SOLVED")
-        end
+            M_opt =   run_nonlinear_model(M)
+            res_det = get_results(M_opt,sup,cap,"-")
+            push!(results, res_det)
 
-        # DETERMINISTIC MODEL
-        # - init model
-        # - create model
-        # - optimise
-        # - save results
-        M0 =      Model(Gurobi.Optimizer)
-        M =       create_nonlinear_model(M0, det_ins)
-        M_opt =   run_nonlinear_model(M)
-        res_det = get_results(M_opt,c,'-')
-        push!(results, res_det)
-        println("-------------------------------------------------------------------------- MODEL CAP $c DET SOLVED")
+
+            # ROBUST MODELS WITH DIFF RISK LEVEL
+            #=
+            # create rob instance
+            rob_ins = create_robust_instance(det_ins, data_entries)
+            data_entries = 50 # for SVC model in robust data generation
+            risk_levels = [0.01,0.1,0.2]
+            for v in risk_levels
+                # - create svc ins
+                # - init model
+                # - create model
+                # - turn robust
+                # - optimise
+                # - save results
+                svc_ins = create_SVC_instance(rob_ins, v)
+                local M0 =      Model(Gurobi.Optimizer)
+                local M =       create_nonlinear_model(M0, det_ins)
+                M_rob,t = turn_model_robust(M, det_ins, rob_ins, svc_ins)
+                local M_opt =   run_nonlinear_model(M_rob)
+                res_rob = get_results(M_opt,"cap",v)
+                push!(results, res_rob)
+                println("-------------------------------------------------------------------------- MODEL RISK $v SOLVED")
+            end
+            =#
+        end
     end
 end
 
-res_file = string("../final_model/model12.csv")
-open(res_file; write=true) do f
-     write(f, "cap;risk;PFAD;AF;CO;total biom;prod biod;demand;quality;prod cost;trans cost;process cost;hydro cost;total cost\n")
+res_file = string("../final_model/model2/test_run.csv")
+open(res_file, "a") do f
+     write(f, "\n\n")
+     write(f, "sup;cap;risk;PFAD;AF;CO;total biom;prod biod;demand;quality;prod cost;trans cost;process cost;hydro cost;total cost\n")
      writedlm(f, results, ';')
 end
-
 
 println("Total time taken: $(t_main)")
 println("in minutes: $(t_main/60)")
 println("in hours: $(t_main/3600)")
-=#

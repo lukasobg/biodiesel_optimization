@@ -1,8 +1,8 @@
-function get_results(m,c,v)
+function get_results(m,s,c,v)
 
 
     if result_count(m) == 0
-        return [c,v,"infeasible"]
+        return [s,c,v,"infeasible"]
     end
 
     # Total biomass bought (sum of x)
@@ -19,6 +19,7 @@ function get_results(m,c,v)
     end
     total_biomass = PFAD_biomass + AF_biomass + CO_biomass
 
+    println("----------------------- RESULTS ------------------------")
     println("Bought PFAD biomass: $(PFAD_biomass)")
     println("Bought AF biomass: $(AF_biomass)")
     println("Bought CO biomass: $(CO_biomass)")
@@ -52,8 +53,10 @@ function get_results(m,c,v)
     total_cost = objective_value(m)
     println("Total cost: $(total_cost)")
     println("should equal: $(prod_cost + trans_cost + process_cost + hydro_cost)")
+    println("----------------------- RESULTS ------------------------")
+    println()
 
-    data = [c,v,
+    data = [s,c,v,
             PFAD_biomass, AF_biomass, CO_biomass, total_biomass,
             total_biodiesel, demand,
             quality,

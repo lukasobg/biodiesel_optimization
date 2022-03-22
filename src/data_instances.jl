@@ -11,8 +11,10 @@ mutable struct DetInstance
     a_b::Vector{Float64}
     D_tot::Int64
 
-    x_sb_min::Matrix{Float64} # Int64 in toy
-    x_sb_max::Matrix{Float64} # Int64 in toy
+    x_sb_min::Matrix{Float64} 
+    #x_sb_min::Matrix{Int64} # Int64 in toy
+    x_sb_max::Matrix{Float64} 
+    #x_sb_max::Matrix{Int64} # Int64 in toy
 
     V_b_min::Matrix{Float64}
     V_b_max::Matrix{Float64}
@@ -23,9 +25,12 @@ mutable struct DetInstance
     
     α::Float64
 
-    CB_b::Vector{Float64} # Int64 in toy
-    PC_b::Matrix{Float64} # Int64 in toy
-    TC_sb::Vector{Float64} # Int64 in toy
+    CB_b::Vector{Float64}
+    #CB_b::Vector{Int64} # Int64 in toy
+    PC_b::Matrix{Float64}
+    #PC_b::Matrix{Int64} # Int64 in toy
+    TC_sb::Vector{Float64}
+    #TC_sb::Vector{Int64} # Int64 in toy
     HC::Int64
 end
 
