@@ -23,7 +23,7 @@ import Random
 include("create_instances.jl")
 include("run_models.jl")
 include("benchmarks.jl")
-include("model_results.jl")
+include("save_results.jl")
 
 Random.seed!(1234);
 
@@ -52,7 +52,7 @@ t_total = @elapsed begin
     cap_factor = 10
     suppliers = 250 
 
-    file = "../benchmarks_new/$(suppliers)suppliers_$(cap_factor)capf.csv"
+    file = "../benchmarks/$(suppliers)suppliers_$(cap_factor)capf.csv"
     println(file)
 
     bm_times = benchmark_model(suppliers, cap_factor)
@@ -67,8 +67,8 @@ println("in minutes: $(minutes)")
 results = []
 
 # set params
-suppliers = [250,300,1000] 
-capillarities = [2,3,5,10]
+suppliers = [250] 
+capillarities = [2,3]
 
 t_main = @elapsed begin
     for sup in suppliers 
@@ -116,7 +116,7 @@ t_main = @elapsed begin
     end
 end
 
-res_file = string("../final_model/model_run.csv")
+res_file = string("../final_model/test_run.csv")
 open(res_file, "a") do f
      write(f, "\n\n")
      write(f, "sup;cap;risk;PFAD;AF;CO;total biom;prod biod;demand;quality;prod cost;trans cost;process cost;hydro cost;total cost\n")
