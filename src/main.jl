@@ -67,8 +67,8 @@ println("in minutes: $(minutes)")
 results = []
 
 # set params
-suppliers = [300,1000] 
-capillarities = [2,5,10]
+suppliers = [250,300,1000] 
+capillarities = [2,3,5,10]
 
 t_main = @elapsed begin
     for sup in suppliers 
@@ -116,7 +116,7 @@ t_main = @elapsed begin
     end
 end
 
-res_file = string("../final_model/model2/test_run.csv")
+res_file = string("../final_model/model_run.csv")
 open(res_file, "a") do f
      write(f, "\n\n")
      write(f, "sup;cap;risk;PFAD;AF;CO;total biom;prod biod;demand;quality;prod cost;trans cost;process cost;hydro cost;total cost\n")

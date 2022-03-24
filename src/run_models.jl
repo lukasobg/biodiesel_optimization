@@ -60,7 +60,7 @@ function create_linear_model(m, ins, accuracy)
 
     # ------------------ Set the problem constraints --------------------
     # Basic constraints (2,4,5,8,9,10)
-    @constraint(m, supply_limit[i=s, j=b], x_sb_min[i,j] <= x[i,j] <= x_sb_max[i,j]);  #2
+    @constraint(m, supply_limit[i=s, j=b], x[i,j] <= x_sb_max[i,j]);  #2
     #constraint 3 handled with NMDT below
     @constraint(m, blendingrho[j=b], V_b_min[j] <= v[j] <= V_b_max[j]); #4 
     @constraint(m, pretreatment[j=b], y[j]==sum(a_b[j]*x[i,j] for i=1:s1)); #5
@@ -177,7 +177,7 @@ function create_nonlinear_model(m, ins)
 
     # -------------------- Set the problem variables -------------------
     # Variable domains for x, y, v, rho, q, z
-    @variable(m, 0<= x[s,b]); #amount of biomass b from supplier s, tons 
+    @variable(m, 0 <= x[s,b]); #amount of biomass b from supplier s, tons 
     @variable(m, y[b] >= 0); #Amount of biomass b pre-treated for blending
     @variable(m, v[b] >= 0); #Property value of pooled biomass b
     @variable(m, rho_min <= rho <= rho_max); #Property value of blended biomass
@@ -186,7 +186,7 @@ function create_nonlinear_model(m, ins)
     
     # ------------------ Set the problem constraints --------------------
     # Create basic constraints (2,3,4,5,6,8,9,10)
-    @constraint(m, supply_limit[i=s, j=b], x_sb_min[i,j] <= x[i,j] <= x_sb_max[i,j]);  #2
+    @constraint(m, supply_limit[i=s, j=b], x[i,j] <= x_sb_max[i,j]);  #2
     @constraint(m, blending1[j=b], sum(x[i,j]*rho_sb[i] for i=1:s1)==sum(x[i,j]*v[j] for i=1:s1)) #3 
     @constraint(m, blendingrho[j=b], V_b_min[j] <= v[j] <= V_b_max[j]); #4 
     @constraint(m, pretreatment[j=b], y[j]==sum(a_b[j]*x[i,j] for i=1:s1)); #5
