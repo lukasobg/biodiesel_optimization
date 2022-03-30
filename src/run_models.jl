@@ -177,7 +177,7 @@ function create_nonlinear_model(m, ins)
 
     # -------------------- Set the problem variables -------------------
     # Variable domains for x, y, v, rho, q, z
-    @variable(m, 0 <= x[s,b]); #amount of biomass b from supplier s, tons 
+    @variable(m, x[s,b] >= 0); #amount of biomass b from supplier s, tons 
     @variable(m, y[b] >= 0); #Amount of biomass b pre-treated for blending
     @variable(m, v[b] >= 0); #Property value of pooled biomass b
     @variable(m, rho_min <= rho <= rho_max); #Property value of blended biomass
