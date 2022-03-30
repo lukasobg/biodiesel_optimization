@@ -261,7 +261,7 @@ function turn_model_robust(m, det_ins, rob_ins, svc_ins)
     s1 = det_ins.s1; s = 1:s1
 
     B_sb = det_ins.B_sb
-    a_b = det_ins.a_b 
+    a_b = det_ins.a_b
     D_tot = det_ins.D_tot
 
     α = det_ins.α
@@ -288,10 +288,10 @@ function turn_model_robust(m, det_ins, rob_ins, svc_ins)
     q = m[:q] # only needed if objective updated here
 
     # Robust variables
-    @variable(m, λ[j in s, i in set_SV] >= 0);
-    @variable(m, μ[j in s, i in set_SV] >= 0);
+    @variable(m, λ[k in b, j in s, i in set_SV] >= 0);
+    @variable(m, μ[k in b, j in s, i in set_SV] >= 0);
     @variable(m, η >= 0);
-    @variable(m, slack >= 0);
+    # @variable(m, slack >= 0);
 
     # Robust constraints
 
@@ -304,10 +304,10 @@ function turn_model_robust(m, det_ins, rob_ins, svc_ins)
         α * (
             sum(a_b[ib] *
                 sum(D[s2,iSV] *
-                    sum( (λ[s1,iSV]-μ[s1,iSV]) * Q[s1,s2] for s1 in s)
+                    sum((λ[ib, s1,iSV] - μ[ib, s1,iSV]) * Q[s1,s2] for s1 in s)
                 for s2 in s for iSV in set_SV) 
             for ib in b)) - 
-        η*θ[ii] >= D_tot * 100 - slack # UNSURE: use slack or not
+        η*θ[ii] >= 3*D_tot  #- slack # UNSURE: use slack or not
     );
 
     end
@@ -315,24 +315,25 @@ function turn_model_robust(m, det_ins, rob_ins, svc_ins)
     println()
 
     # 42 
-    @constraint(m, [j in s, i in set_SV],
-        λ[j,i] + μ[j,i] - η * α_val[i] == 0
+    @constraint(m, [k in b, j in s, i in set_SV],
+        λ[k,j,i] + μ[k,j,i] - η * α_val[i] == 0
     )
 
     # 43
-    @constraint(m, [j in s],
-        sum(sum(Q[j,j1] * (λ[j1,i] - μ[j1,i]) for j1 in s) for i in set_SV) == sum(x[j,k] for k in b)
+    @constraint(m, [k in b, j in s],
+        sum(sum(Q[j,j1] * (λ[k,j1,i] - μ[k,j1,i]) for j1 in s) for i in set_SV) == 
+        x[j,k]
     )
 
     # UNSURE: Update objective to have slack or not 
-    @objective(m, Min,
-        sum(
-             sum(
-                 (CB_b[j]+TC_sb[i]+PC_b[j])*x[i,j] 
-             for j=1:b1)
-         for i=1:s1) + 
-         HC*q + 1e3*slack
-    );
+    # @objective(m, Min,
+    #     sum(
+    #          sum(
+    #              (CB_b[j]+TC_sb[i]+PC_b[j])*x[i,j] 
+    #          for j=1:b1)
+    #      for i=1:s1) + 
+    #      HC*q #+ 1e3*slack
+    # );
 
     return m, t_cons
 end
