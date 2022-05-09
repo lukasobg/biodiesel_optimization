@@ -334,17 +334,17 @@ function create_robust_data(det_ins, data_entries)
     for i in s
         # UCO 
         if B_sb[i,1]==1
-            Gamma_b=round.(rand(Normal(75, 5), ent), digits=2) #WCO
+            Gamma_b=round.(rand(Normal(0.75, 0.1), ent), digits=4) #WCO
             D[i,:]=Gamma_b
 
         # AF
         elseif B_sb[i,2]==1
-            Gamma_b=round.(rand(Normal(95, 5), ent), digits=2)   #AF
+            Gamma_b=round.(rand(Normal(0.95, 0.1), ent), digits=4)   #AF
             D[i,:]=Gamma_b
 
         # PFAD
         else B_sb[i,3]==1
-            Gamma_b=round.(rand(Normal(85, 5), ent), digits=2)   #PFAD
+            Gamma_b=round.(rand(Normal(0.85, 0.1), ent), digits=4)   #PFAD
             D[i,:]=Gamma_b
         end
     end
@@ -352,8 +352,8 @@ function create_robust_data(det_ins, data_entries)
     # Limit values to [0.00, 100.00]
     for i in s
         for j in 1:ent
-            D[i,j] = (D[i,j]>100.00) ? 100.00 : D[i,j]
-            D[i,j] = (D[i,j]<0.00) ? 0.00 : D[i,j]
+            D[i,j] = (D[i,j]>1.0000) ? 1.0000 : D[i,j]
+            D[i,j] = (D[i,j]<0.0000) ? 0.0000 : D[i,j]
         end
     end
     # D is now gamma_s s x entities
@@ -361,14 +361,14 @@ function create_robust_data(det_ins, data_entries)
     Σ = cov(D, corrected=true, dims=2);
     Q = round.(Σ^(-0.5), digits = 6);
 
-    println("Type of Q before: $(typeof(Q)))")
+    # println("Type of Q before: $(typeof(Q)))")
 
-    println()
-    println("Diagonal elems of Σ[1:10] before")
-    Σ_diag = Σ[diagind(Σ)]
-    for elem in Σ_diag[1:10] 
-        println(elem)
-    end
+    # println()
+    # println("Diagonal elems of Σ[1:10] before")
+    # Σ_diag = Σ[diagind(Σ)]
+    # for elem in Σ_diag[1:10] 
+    #     println(elem)
+    # end
 
     # Q matrix sometimes gets complex numbers
     # Make small modifications to the diagonal of Σ
@@ -378,20 +378,23 @@ function create_robust_data(det_ins, data_entries)
         Q = round.(Σ^(-0.5), digits = 6);
     end
 
-    println()
-    println("Type of Q after: $(typeof(Q)))")
+    # println()
+    # println("Type of Q after: $(typeof(Q)))")
 
-    println("Diagonal elems of Σ[1:10] after")
-    Σ_diag = Σ[diagind(Σ)]
-    for elem in Σ_diag[1:10] 
-        println(elem)
-    end
+    # println("Diagonal elems of Σ[1:10] after")
+    # Σ_diag = Σ[diagind(Σ)]
+    # for elem in Σ_diag[1:10] 
+    #     println(elem)
+    # end
 
     # Step 2: form the Kernel matrix
 
     # Min and max gamma for each supplier
     uU = maximum(D, dims=2); #dims=2 since data is per column
     uL = minimum(D, dims=2);
+    println(D)
+
+    println("U's: ", size(uL), size(uU))
 
     N = s1; #N is the same as the number of suppliers
     J = 1:N ;
@@ -408,7 +411,7 @@ function create_robust_data(det_ins, data_entries)
 
     # The kernel trick K sweeps the data to be calculated.
     M = ent; #data entities
-    Km = zeros(M, M);
+    Km = zeros(M, M);s
     for i = 1:M
         for i1 = 1:M
             # D[:,i], D[:,i1] = sx1 vector of gammas of each supplier 
@@ -429,7 +432,7 @@ function create_SVC_data(rob_ins, risk_ν)
     # Step 3: derive the support vector clustering (SVC) model
 
     SVC_Model = Model(Gurobi.Optimizer);
-    #set_optimizer_attributes(SVC_Model, "mehrotra_algorithm" => "yes");
+    # set_optimizer_attributes(SVC_Model, "mehrotra_algorithm" => "yes");
 
     # Weight variable alpha
     @variable(SVC_Model, α[i in 1:M] >= 0);
