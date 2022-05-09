@@ -61,7 +61,8 @@ function create_deterministic_instance(suppliers, cap_factor)
     k=0:9;        #decimal digits
     #p=accuracy;   #cardinal of l:1,2 or 3 # now set in create_linear_model(,,p)
 
-    a_b=[0.94; 0.95 ; 0.98]; #used in overleaf 
+    #a_b=[0.94; 0.95 ; 0.98]; #used in overleaf 
+    a_b=[0.95; 0.90 ; 0.99]; #used in thesis 
     D_tot=1500;
 
     # Generate and/or update supply paramateres
@@ -93,8 +94,11 @@ function create_deterministic_instance(suppliers, cap_factor)
 
     α=0.94; #hydroconversion yield?
 
-    CB_b = [90, 120, 100]; #values used in overleaf
-    PC_b = [50 60 40];#values used in overleaf
+    #CB_b = [90, 120, 100]; #values used in overleaf
+    CB_b = [250, 400, 450]; #values used in thesis
+    #PC_b = [50 60 40];#values used in overleaf
+    PC_b = [680 696 700];#values used in thesis
+
     T_b = 123; #transportation cost for biomass b  tons
     TC_sb=D_s*T_b; #distance*transportation costs
     HC = 100; #hydrotreatment cost 

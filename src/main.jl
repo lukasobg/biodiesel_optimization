@@ -18,6 +18,7 @@ using JuMP, Gurobi, Cbc, Ipopt
 using LinearAlgebra, Statistics
 using Distributions
 using DelimitedFiles
+using Printf
 import Random
 
 include("create_instances.jl")
@@ -67,62 +68,83 @@ println("in minutes: $(minutes)")
 results = []
 
 # set params
-suppliers = [250] 
-capillarities = [2,3]
+suppliers = [1000] 
+capillarities = [6]
 
+loop_times = []
 t_main = @elapsed begin
     for sup in suppliers 
         for cap in capillarities
-            Random.seed!(1234);
-            # create det instance
-            det_ins = create_deterministic_instance(sup,cap)
+            Random.seed!(1234); # create same instance(s) each time
+            for i in 1:6
+                # create det instance
+                t_loop = @elapsed begin
+                    t_data = @elapsed begin
+                        det_ins = create_deterministic_instance(sup,cap)
+                    end
 
-            # DETERMINISTIC MODEL
-            # - init model
-            # - create model
-            # - optimise
-            # - save results
-            M0 =      Model(Gurobi.Optimizer)
-            M =       create_nonlinear_model(M0, det_ins)
-            M_opt =   run_nonlinear_model(M)
-            res_det = get_results(M_opt,sup,cap,"-")
-            push!(results, res_det)
+                    # DETERMINISTIC MODEL
+                    # - init model
+                    # - create model
+                    # - optimise
+                    # - save results
+                    M0 =      Model(Gurobi.Optimizer)
+                    M =       create_nonlinear_model(M0, det_ins)
+                    M_opt =   run_nonlinear_model(M)
+                    res_det = get_results(M_opt,sup,cap,"-")
+                    push!(results, res_det)
 
 
-            # ROBUST MODELS WITH DIFF RISK LEVEL
-            #=
-            # create rob instance
-            rob_ins = create_robust_instance(det_ins, data_entries)
-            data_entries = 50 # for SVC model in robust data generation
-            risk_levels = [0.01,0.1,0.2]
-            for v in risk_levels
-                # - create svc ins
-                # - init model
-                # - create model
-                # - turn robust
-                # - optimise
-                # - save results
-                svc_ins = create_SVC_instance(rob_ins, v)
-                local M0 =      Model(Gurobi.Optimizer)
-                local M =       create_nonlinear_model(M0, det_ins)
-                M_rob,t = turn_model_robust(M, det_ins, rob_ins, svc_ins)
-                local M_opt =   run_nonlinear_model(M_rob)
-                res_rob = get_results(M_opt,"cap",v)
-                push!(results, res_rob)
-                println("-------------------------------------------------------------------------- MODEL RISK $v SOLVED")
+                    # ROBUST MODELS WITH DIFF RISK LEVEL
+                    # create rob instance
+                    #=
+                    data_entries = 100 # for SVC model in robust data generation
+                    rob_ins = create_robust_instance(det_ins, data_entries)
+                    risk_levels = [0.01,0.1,0.2]
+                    for v in risk_levels
+                        # - create svc ins
+                        # - init model
+                        # - create model
+                        # - turn robust
+                        # - optimise
+                        # - save results
+                        svc_ins = create_SVC_instance(rob_ins, v)
+                        local M0 = Model(Gurobi.Optimizer)
+                        local M = create_nonlinear_model(M0, det_ins)
+                        M_rob,t = turn_model_robust(M, det_ins, rob_ins, svc_ins)
+                        local M_opt = run_nonlinear_model(M_rob)
+                        res_rob = get_results(M_opt,sup,cap,v)
+                        push!(results, res_rob)
+                        println("-------------------------------------------------------------------------- MODEL RISK $v SOLVED")
+                    end
+                    =#
+                end
+                push!(loop_times, t_loop)
+                println("################### INSTANCE $(i) DONE, DATA GEN. $(round.(t_data/60; digits=2)), TOTAL $(round.(t_loop/60; digits=2)) MINUTES ###################")
+                println()
             end
-            =#
         end
     end
 end
 
-res_file = string("../final_model/test_run.csv")
+
+res_file = string("../final_model/test_run4.csv")
 open(res_file, "a") do f
      write(f, "\n\n")
      write(f, "sup;cap;risk;PFAD;AF;CO;total biom;prod biod;demand;quality;prod cost;trans cost;process cost;hydro cost;total cost\n")
      writedlm(f, results, ';')
 end
 
-println("Total time taken: $(t_main)")
-println("in minutes: $(t_main/60)")
-println("in hours: $(t_main/3600)")
+println()
+println("Time taken in each instance:")
+for i in 1:length(loop_times)
+    print("$(i): ")
+    @printf "%.2f sec, " loop_times[i]
+    @printf "%.2f min" loop_times[i]/60
+    println()
+end
+
+println()
+@printf "Total time taken: %.2f seconds \n" t_main
+@printf "in minutes: %.2f \n" t_main/60
+@printf "in hours: %.2f \n" t_main/3600
