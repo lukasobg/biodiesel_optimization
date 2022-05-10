@@ -28,55 +28,19 @@ include("save_results.jl")
 
 Random.seed!(1234);
 
-# --------------------------- Simple example problem ------------------------------------
-#=
-# Create the data for the example problem
-toy_ins = create_toy_instance()
-
-# Initialize models
-m0_det = Model(Gurobi.Optimizer) # NMDT - deterministic
-m0_nlm = Model(Gurobi.Optimizer) # nonlinear
-
-# Create the models with the problem data from toy_ins
-m_nlm = create_nonlinear_model(m0_nlm, toy_ins)
-
-# Optimize the models with the problem data from toy_ins
-println("\nNONLINEAR (TOY) MODEL OPTIMISATION\n")
-m_nlm_opt = run_nonlinear_model(m_nlm) 
-
-# Results
-results = get_results(m_nlm_opt,"-","det")
-=#
-# --------------------------- Benchmarks ------------------------------------
-#=
-t_total = @elapsed begin
-    cap_factor = 10
-    suppliers = 250 
-
-    file = "../benchmarks/$(suppliers)suppliers_$(cap_factor)capf.csv"
-    println(file)
-
-    bm_times = benchmark_model(suppliers, cap_factor)
-
-    save_benchmark(bm_times, file)
-end
-minutes = t_total/60
-println("Total time taken: $(t_total)")
-println("in minutes: $(minutes)")
-=#
 # --------------------------- FINAL MODEL ------------------------------------
 results = []
 
 # set params
 suppliers = [1000] 
-capillarities = [6]
+capillarities = [10]
 
 loop_times = []
 t_main = @elapsed begin
     for sup in suppliers 
         for cap in capillarities
             Random.seed!(1234); # create same instance(s) each time
-            for i in 1:6
+            for i in 1:50
                 # create det instance
                 t_loop = @elapsed begin
                     t_data = @elapsed begin
@@ -128,7 +92,7 @@ t_main = @elapsed begin
 end
 
 
-res_file = string("../final_model/test_run4.csv")
+res_file = string("../final_model/1000_10.csv")
 open(res_file, "a") do f
      write(f, "\n\n")
      write(f, "sup;cap;risk;PFAD;AF;CO;total biom;prod biod;demand;quality;prod cost;trans cost;process cost;hydro cost;total cost\n")

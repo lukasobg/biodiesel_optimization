@@ -1,31 +1,63 @@
 # RobustBiodieselSCM
 
+## Run the program 
+Run the following command from the src folder:
+
+For the main program
+```
+julia main.jl
+```
+For the toy problem
+```
+julia toy_problem.jl
+```
+For the benchmarks
+```
+julia run_benchmarks.jl
+```
+
+----
+
 ## The src folder 
 This folder contains the following files with Julia code.
 
+
+**Files that run the program.**
+&nbsp;
 ### *main.jl*
-This file runs the program.  
+This file runs the main program.  
+&nbsp;
+### *toy_problem.jl*
+This file runs the toy problem.  
+&nbsp;
+### *run_benchmarks.jl*
+This file runs benchmarks.  
 
-There is a section for the smaller example problem and a section for the large problem.
-Only deterministic optimisation can be used for the smaller example problem.  
-The number of suppliers and the number of data entries to use in the SVC model (in robust data generation, file: *generate_data.jl*) are set here.
+----
 
+**Other files**
+
+&nbsp;
 ### *create_instances.jl*
 The data used in the optimisation problem is created here.  
 
 Important functions:
 
 - **create_toy_instance()**: creates the smaller example problem data.  
-- **create_general_instance()**: creates the large problem data. This includes robust data generation.
+- **create_deterministic_instance()**: creates the large problem data.
 
+&nbsp;
 ### *data_instances.jl*
-This file contains the definitions for two data instance structures.  
+This file contains the definitions for three data instance structures.  
 
-**DetInstance** holds all the data used for deterministic optimisation.   
-**RobInstance** holds the additional data used for robust optimisation.   
+**ToyInstance** holds all the data used in the toy problem.   
+**DetInstance** holds all the data used in deterministic optimisation.   
+**RobInstance** holds the additional data used in robust optimisation.   
+**SVCInstance** holds the additional data used in robust optimisation.   
 
 These data instances are created in *create_instances.jl*.
 
+&nbsp;
 ### *generate_data.jl*
 This file contains functions for generating data. 
 
@@ -38,6 +70,7 @@ Important functions:
 
 These functions are used in *create_instances.jl*.
 
+&nbsp;
 ### *run_models.jl*
 This file contains functions for creating or updating models and functions for optimising these models.
 
@@ -54,28 +87,31 @@ Model optimisation functions:
 
 These functions are called directly from the *main.jl* file.
 
+&nbsp;
 ### *benchmarks.jl*
 This file contains functions for benchmarking. Some changes required when benchmarking a deterministic v robust model. 
 - **benchmark_model()**: runs 11 iterations of benchmarking. 11 data instances, 4 models each: nlm, nmdt with p=2, nmdt with p=3, nmdt with p=4.
 - **save_benchmark()**: prints out benchmark times and stores in csv files.
 
+&nbsp;
 ### *model_results.jl*
-- **get_results()**: gets a solved model as parameter, prints out and stores the relevant data in csv-files.
+- **get_results()**: gets a solved model as parameter, prints out and returns the relevant data.
+
+----
+
 ## The benchmarks folder 
 
 This folder contains benchmark data as csv-files. Separate folders for deterministic and robust model benchmarks. 
+
+----
 
 ## The final_model folder 
 
 This folder contains the model results for the final model.
 
+----
+
 ## Other files
 The original code files (not in use):
 - *original_code.jl*  
 - *BioDieselOpt.jl*: contains the small example problem
-
-## Run the program 
-From the src folder run command:  
-```
-julia main.jl
-```

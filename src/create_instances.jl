@@ -5,48 +5,68 @@ include("generate_data.jl")
 # Only contains data for deterministic optimization.
 # 
 # Data returned as struct det_ins which is then used in the optimization.
-function create_toy_instance()
+function create_toy_instance(suppliers)
+
+    b1 = 3; s1 = suppliers; k = 0:9
 
     # B_sb: matrix where 1 = biomass b supplied by supplier s
-    B_sb=[0 0 1;0 0 1;0 0 1;0 0 1;0 1 0;0 1 0;0 1 0;1 0 0;1 0 0;1 0 0;1 0 0;1 0 0];
+    B_sb=[0 0 1;0 0 1;0 0 1;0 0 1;0 1 0;0 1 0;0 1 0;1 0 0;1 0 0;1 0 0;1 0 0;1 0 0]
 
-    ins = DetInstance(
+    a_b = [0.94; 0.95 ; 0.98]
+    D_tot = 1500
+
+    x_sb_min = [20;30;12;10;10;20;10;15;10;10;10;10].*B_sb            # x_sb_min
+    x_sb_max = [200;300;120;100;100;200;400;150;100;180;60;150].*B_sb # x_sb_max
+
+    V_b_min=[0.6 0.6 0.6]; #Minimum property value of biomass b
+    V_b_max=[0.85 0.95 0.9]; #Maximum property value of biomass b
+
+    rho_sb = [0.8 ;0.9; 0.78;0.64;0.68;0.85;0.7;0.58;0.7;0.65;0.55;0.6]
+    rho_min=0.6; #Minimum property value of bio-diesel
+    rho_max=0.9; #Maximum property value of bio-diesel
+
+    α=0.94; #hydroconversion yield?
+
+    CB_b = [90, 120, 100]; #values used in overleaf
+    PC_b = [50 60 40];#values used in overleaf
+    TC_sb = [100;90;80;50;100;120;100;120;120;100;80;50] # TC_sb
+
+    HC = 100; #hydrotreatment cost 
+
+    ins = ToyInstance(
         # Sets
-        3,     # b1: number of biomass  
-        12,    # s1: number of suppliers 
-        0:9,   # k:  decimal digits for NMDT
-        #1,     # p:  cardinal of l:1,2 or 3 
+        b1,
+        s1,
+        k,
     
         B_sb,
-        [0.94; 0.95 ; 0.98], # a_b
-        1500,                # D_tot
+        a_b,
+        D_tot,
     
         # x_sb: amount of biomass b supplied by supplier s
-        [20;30;12;10;10;20;10;15;10;10;10;10].*B_sb,            # x_sb_min
-        [200;300;120;100;100;200;400;150;100;180;60;150].*B_sb, # x_sb_max
+        x_sb_min,
+        x_sb_max,
     
         # V_b: property value of biomass b
-        [0.6 0.6 0.6],    # V_b_min
-        [0.85 0.95 0.9],  # V_b_max
+        V_b_min,
+        V_b_max,
     
         # NOTE 1: rho_min 0.6 > 0.58,0.55 ? 
         # rho_sb The property value of biomass bought from supplier s
-        [0.8 ;0.9; 0.78;0.64;0.68;0.85;0.7;0.58;0.7;0.65;0.55;0.6],  # rho_sb
-        0.6,  # rho_min: Minimum property value of BIO-DIESEL
-        0.9,  # rho_max: Maximum property value of BIO-DIESEL
+        rho_sb,
+        rho_min,
+        rho_max,
     
-        0.94,  # α: hydroconversion yield
+        α,  # α: hydroconversion yield
     
-        [90, 120, 100], # CB_b: cost of biomass b
-        [50 60 40],     # PC_b: processing cost of biomass b
+        CB_b,
+        PC_b,     # PC_b: processing cost of biomass b
+        TC_sb, # TC_sb: transportation cost of biomass b bought from supplier s 
 
-        # TC_sb: transportation cost of biomass b bought from supplier s 
-        [100;90;80;50;100;120;100;120;120;100;80;50],  # TC_sb
-        100  # HC: hydrotreatment cost 
-    
+        HC  # HC: hydrotreatment cost 
     )
-    return ins
 
+    return ins
 end
 
 # Function creates the deterministic problem instance with all the data.
@@ -59,9 +79,7 @@ function create_deterministic_instance(suppliers, cap_factor)
     b1=3;         #number of biomass  
     s1=suppliers; #number of suppliers, set in main.jl
     k=0:9;        #decimal digits
-    #p=accuracy;   #cardinal of l:1,2 or 3 # now set in create_linear_model(,,p)
 
-    #a_b=[0.94; 0.95 ; 0.98]; #used in overleaf 
     a_b=[0.95; 0.90 ; 0.99]; #used in thesis 
     D_tot=1500;
 
@@ -94,9 +112,7 @@ function create_deterministic_instance(suppliers, cap_factor)
 
     α=0.94; #hydroconversion yield?
 
-    #CB_b = [90, 120, 100]; #values used in overleaf
     CB_b = [250, 400, 450]; #values used in thesis
-    #PC_b = [50 60 40];#values used in overleaf
     PC_b = [680 696 700];#values used in thesis
 
     T_b = 123; #transportation cost for biomass b  tons
