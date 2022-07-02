@@ -99,15 +99,9 @@ This file contains functions for benchmarking. Some changes required when benchm
 
 ----
 
-## The benchmarks folder 
+## The data folder 
 
-This folder contains benchmark data as csv-files. Separate folders for deterministic and robust model benchmarks. 
-
-----
-
-## The final_model folder 
-
-This folder contains the model results for the final model.
+This folder contains the model results and benchmark data as csv-files. Separate folders for deterministic and robust model benchmarks. 
 
 ----
 
