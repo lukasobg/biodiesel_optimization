@@ -1,1 +1,5 @@
 .DS_Store
+benchmarks/
+benchmarks2/
+final_model/
+toy_problem/
