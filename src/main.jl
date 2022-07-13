@@ -32,15 +32,17 @@ Random.seed!(1234);
 results = []
 
 # set params
-suppliers = [1000] 
+suppliers = [500] 
 capillarities = [10]
+res_file = string("../local_data/NLMvNMDT2.csv")
+instances = 1
 
 loop_times = []
 t_main = @elapsed begin
     for sup in suppliers 
         for cap in capillarities
             Random.seed!(1234); # create same instance(s) each time
-            for i in 1:50
+            for i in 1:instances
                 # create det instance
                 t_loop = @elapsed begin
                     t_data = @elapsed begin
@@ -54,7 +56,11 @@ t_main = @elapsed begin
                     # - save results
                     M0 =      Model(Gurobi.Optimizer)
                     M =       create_nonlinear_model(M0, det_ins)
+                    #M =       create_linear_model(M0, det_ins, 2)
+                    #M =       create_linear_model(M0, det_ins, 3)
+                    #M =       create_linear_model(M0, det_ins, 4)
                     M_opt =   run_nonlinear_model(M)
+                    #M_opt =   run_linear_model(M)
                     res_det = get_results(M_opt,sup,cap,"-")
                     push!(results, res_det)
 
@@ -91,8 +97,6 @@ t_main = @elapsed begin
     end
 end
 
-
-res_file = string("../final_model/1000_10.csv")
 open(res_file, "a") do f
      write(f, "\n\n")
      write(f, "sup;cap;risk;PFAD;AF;CO;total biom;prod biod;demand;quality;prod cost;trans cost;process cost;hydro cost;total cost\n")
