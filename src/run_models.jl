@@ -78,14 +78,14 @@ function create_linear_model(m, ins, accuracy)
     @constraint(m, eq14[i=s, j=b, l=1:p], x[i,j]==sum(x1[k,l,i,j] for k=0:9));
 
     @constraint(m, eq151[k=k,l=1:p, i=s, j=b], x1[k,l,i,j] <= x_sb_max[i,j]*z1[k,l,j]) ;
-    @constraint(m, eq152[k=k,l=1:p, i=s, j=b], x_sb_min[i,j]*z1[k,l,j] <= x1[k,l,i,j]) ; 
+    #@constraint(m, eq152[k=k,l=1:p, i=s, j=b], x_sb_min[i,j]*z1[k,l,j] <= x1[k,l,i,j]) ; 
 
     @constraint(m, eq16[l=1:p, j=b], sum( z1[k,l,j] for k=0:9)==1);
 
     @constraint(m, eq171[i=s, j=b], Δw1[i,j]<= x_sb_max[i,j]*Δv[j]);
-    @constraint(m, eq172[i=s, j=b], x_sb_min[i,j]*Δv[j] <= Δw1[i,j]);
+    #@constraint(m, eq172[i=s, j=b], x_sb_min[i,j]*Δv[j] <= Δw1[i,j]);
 
-    @constraint(m, eq18[i=s, j=b], Δw1[i,j]<= (x[i,j] - x_sb_min[i,j])*10.0^(-p)+x_sb_min[i,j]*Δv[j]);
+    #@constraint(m, eq18[i=s, j=b], Δw1[i,j]<= (x[i,j] - x_sb_min[i,j])*10.0^(-p)+x_sb_min[i,j]*Δv[j]);
     @constraint(m, eq19[i=s, j=b], Δw1[i,j]>= (x[i,j] - x_sb_max[i,j])*10.0^(-p)+x_sb_max[i,j]*Δv[j]);
     @constraint(m, eq20[j=b], Δv[j]<= 10.0^(-p));
     #########@constraint(m, eq21, w2== rho*q); #not in the model
