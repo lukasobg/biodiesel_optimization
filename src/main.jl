@@ -32,10 +32,10 @@ Random.seed!(1234);
 results = []
 
 # set params
-suppliers = [500] 
+suppliers = [400] 
 capillarities = [10]
-res_file = string("../local_data/NLMvNMDT2.csv")
-instances = 1
+res_file = string("../local_data/NMDTprecision4.csv")
+instances = 4
 
 loop_times = []
 t_main = @elapsed begin
@@ -55,14 +55,25 @@ t_main = @elapsed begin
                     # - optimise
                     # - save results
                     M0 =      Model(Gurobi.Optimizer)
+                    #M02 =      Model(Gurobi.Optimizer)
+                    #M04 =      Model(Gurobi.Optimizer)
+
                     M =       create_nonlinear_model(M0, det_ins)
-                    #M =       create_linear_model(M0, det_ins, 2)
-                    #M =       create_linear_model(M0, det_ins, 3)
-                    #M =       create_linear_model(M0, det_ins, 4)
+                    #M2 =       create_linear_model(M02, det_ins, 2)
+                    #M4 =       create_linear_model(M04, det_ins, 4)
+
                     M_opt =   run_nonlinear_model(M)
-                    #M_opt =   run_linear_model(M)
-                    res_det = get_results(M_opt,sup,cap,"-")
+                    #M_opt2 =   run_linear_model(M2)
+                    #M_opt4 =   run_linear_model(M4)
+
+                    res_det = get_results(M_opt,sup,cap,"nlm")
                     push!(results, res_det)
+
+                    #res_det = get_results(M_opt2,sup,cap,"nmdt2")
+                    #push!(results, res_det)
+
+                    #res_det = get_results(M_opt4,sup,cap,"nmdt4")
+                    #push!(results, res_det)
 
 
                     # ROBUST MODELS WITH DIFF RISK LEVEL
